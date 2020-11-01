@@ -1,7 +1,7 @@
 from scipy.optimize import curve_fit
-import matplotlib.pylab as plt
-import numpy as np
 import matplotlib
+import matplotlib.pyplot as plt
+import numpy as np
 import os
 import sys
 from __casac__.table import table as tb
@@ -22,8 +22,8 @@ def radiansToDegrees(radians):
 def queryTable(query=""):
     return tb.taql(query+" AS "+tablename)
 
-class PolFunction(object):
-    def __init__(self, nu_0=0.0, terms=0, **kwargs):
+class FluxFunction(object):
+    def __init__(self, flux_0=0.0, nu_0=0.0, **kwargs):
         initlocals = locals()
         initlocals.pop('self')
         for a_attribute in initlocals.keys():
@@ -35,15 +35,43 @@ class PolFunction(object):
         return self.coeff
 
     def f(self, nu, *args):
+        nu_div = nu/self.nu_0
+        exp = args[0] + args[1] * np.log(nu_div)
+        s_flux = self.flux_0 * (nu_div)**exp
+        return s_flux
+
+    def fit(self, nu, data, initial_coeffs=None, lowerbound=-np.inf, upperbound=np.inf):
+        lowerbounds = np.ones(len(initial_coeffs))*lowerbound
+        upperbounds = np.ones(len(initial_coeffs))*upperbound
+        popt, pcov = curve_fit(self.f, nu, data, p0=initial_coeffs, check_finite=True, bounds=(lowerbounds,upperbounds))
+        self.coeff = popt
+        return popt, pcov
+
+class PolFunction(object):
+    def __init__(self, nu_0=0.0, nterms=0, **kwargs):
+        initlocals = locals()
+        initlocals.pop('self')
+        for a_attribute in initlocals.keys():
+            setattr(self, a_attribute, initlocals[a_attribute])
+        self.__dict__.update(kwargs)
+        self.coeff = []
+
+    def getCoeffs(self):
+        return self.coeff
+
+    def getNTerms(self):
+        return self.nterms
+
+    def f(self, nu, *args):
         y = np.zeros(len(nu))
-        for i in range(0, self.terms + 1):
+        for i in range(0, self.nterms):
             y += args[i] * np.power((nu - self.nu_0) / self.nu_0, i)
         return y
 
-    def f_eval(self, nu, coeff):
+    def f_eval(self, nu, coeffs):
         y = np.zeros(len(nu))
-        for i in range(0, self.terms + 1):
-            y += coeff[i] * np.power((nu - self.nu_0) / self.nu_0, i)
+        for i in range(0, self.nterms):
+            y += coeffs[i] * np.power((nu - self.nu_0) / self.nu_0, i)
         return y
 
     def fit(self, nu, data, initial_coeffs=None, lowerbound=-np.inf, upperbound=np.inf):
@@ -76,6 +104,7 @@ class PolarizedSource(object):
 
         # Pol fraction in percentage to fraction
         self.polfrac /= 100.0
+        self.spidx_coeffs = []
 
     def p3c48(self):
         self.nu = np.array([1.05, 1.45, 1.64, 1.95, 2.45, 2.95, 3.25, 3.75, 4.50, 5.00, 6.50, 7.25, 8.10, 8.80, 12.8, 13.7, 14.6, 15.5, 18.1, 19.0, 22.4, 23.3, 36.5, 43.5])
@@ -85,7 +114,7 @@ class PolarizedSource(object):
 
     def p3c48_2019(self):
         self.nu = np.array(np.array([1.02, 1.47, 1.87, 2.57, 3.57, 4.89, 6.68, 8.43, 11.3, 14.1, 16.6, 19.1, 25.6, 32.1, 37.1, 42.1, 48.1]))
-        self.polangle = np.array([4.3, -34, 23, 67.1, -84.0, -72, -66, -63, -62, -63, -64, -68, -72, -76, -77, -84, -84])
+        self.polangle = np.array([4.3, -34.0, 23.0, 67.1, -84.0, -72.0, -66.0, -63.0, -62.0, -63.0, -64.0, -68.0, -72.0, -76.0, -77.0, -84.0, -84.0])
         self.polfrac = np.array([0.3, 0.5, 0.9, 1.6, 2.9, 4.3, 5.4, 5.4, 5.7, 6.1, 6.3, 6.5, 7.2, 6.4, 6.7, 5.6, 6.8])
         self.name = "3C48"
 
@@ -161,41 +190,66 @@ class PolarizedSource(object):
             return False
 
     # Returns values in an array lower than a certain frequency
-    def filter(self, nu=np.inf):
-        indexes = np.where(self.nu < nu)
-        self.nu = self.nu[indexes]
-        self.polfrac = self.polfrac[indexes]
-        self.polangle = self.polangle[indexes]
+    def filter(self, nu, data, nu_min=0.0, nu_max=np.inf):
+        indexes = np.where((nu > nu_min) & (nu < nu_max))
+        nu = nu[indexes]
+        data = data[indexes]
+        return nu, data
 
-    def querySpecIdx(self, standard="Perley-Butler 2013", epoch="2012"):
+    def flux_scalar(self, nu):
+        flux_at_nu = 0.0
+
+        for i in range(len(self.spidx_coeffs)):
+            flux_at_nu += self.spidx_coeffs[i][0] * (np.log10(nu)**i)
+
+        return 10**flux_at_nu
+
+    def flux(self, nu):
+        flux_at_nu = np.zeros(len(nu))
+
+        for i in range(len(self.spidx_coeffs)):
+            flux_at_nu += self.spidx_coeffs[i][0] * (np.log10(nu)**i)
+
+        return 10**flux_at_nu
+
+    def getCoeffs(self, standard="Perley-Butler 2013", epoch="2012"):
         coeff_table = os.getenv('CASAPATH').split(' ')[0] + '/data/nrao/VLA/standards/' + self.spix_dict[standard]
-        print coeff_table
         tb_obj = tb()
         tb_obj.open(coeff_table)
         query_table = tb_obj.taql("select * from "+coeff_table+" where Epoch="+epoch)
         coeffs = query_table.getcol(self.name+"_coeffs")
-        # get alpha
-        alpha = coeffs[1][0]/coeffs[0][0]
-        # get beta
-        beta = coeffs[2][0]/coeffs[0][0] - alpha*(alpha-1)/2
+        self.spidx_coeffs = coeffs
         tb_obj.close()
-        return [alpha, beta]
+        return coeffs
 
-    def getPolFracCoeffs(self, nu_0=0.0, nterms=3):
+    def fitAlphaBeta(self, nu, nu_0=0.0):
         if(not nu_0):
-            nu_0 = np.median(self.nu)
+            nu_0 = np.median(nu)
+        flux_0 = self.flux_scalar(nu_0/1e9)
+        fluxes = self.flux(nu/1e9)
+
+        i_coeffs = np.random.rand(2)
+        source_func_frac = FluxFunction(flux_0=flux_0, nu_0=nu_0)
+        source_func_frac.fit(nu, fluxes, i_coeffs)
+        return source_func_frac.getCoeffs()
+
+    def getPolFracCoeffs(self, nu_0=0.0, nterms=3, nu_min=0.0, nu_max=np.inf):
+        nu, polfrac = self.filter(self.getNu(), self.getPolFrac(), nu_min, nu_max)
+        if(not nu_0):
+            nu_0 = np.median(nu)
         ifrac_coeffs = np.random.uniform(0.0, 1.0, nterms)
         source_func_frac = PolFunction(nu_0=nu_0, nterms=nterms)
-        source_func_frac.fit(self.getNu(), self.getPolFrac(), ifrac_coeffs, 0.0, 1.0)
+        source_func_frac.fit(nu, polfrac, ifrac_coeffs)
         return source_func_frac.getCoeffs()
 
     # Returns pol angle coeffs in radians
-    def getPolAngleCoeffs(self, nu_0=0.0, nterms=3):
+    def getPolAngleCoeffs(self, nu_0=0.0, nterms=3, nu_min=0.0, nu_max=np.inf):
+        nu, polangle = self.filter(self.getNu(), self.getPolAngle(), nu_min, nu_max)
         if(not nu_0):
-            nu_0 = np.median(self.nu)
+            nu_0 = np.median(nu)
         iangle_coeffs = np.random.uniform(-np.pi, np.pi, nterms)
         source_func_angle = PolFunction(nu_0=nu_0, nterms=nterms)
-        source_func_angle.fit(self.getNu(), self.getPolAngle(), iangle_coeffs, -np.pi, np.pi)
+        source_func_angle.fit(nu, polangle, iangle_coeffs)
         return source_func_angle.getCoeffs()
 
 class PolCalibration(object):
@@ -210,21 +264,17 @@ class PolCalibration(object):
     def setModel(self, pol_source_object = None, standard="Perley-Butler 2013", field="", epoch="2012", nu_0=0.0, nterms_angle=3, nterms_frac=3):
 
         # get spectral idx coeffs from VLA tables
-        spec_idx = pol_source_object.querySpecIdx(standard=standard, epoch=epoch)
+        pol_source_object.getCoeffs(standard=standard, epoch=epoch)
+        nu_fit = np.linspace(0.3275*1e9, 50.0*1e9, 40)
+        spec_idx = pol_source_object.fitAlphaBeta(nu_fit, nu_0=nu_0)
         pol_frac_coeffs = pol_source_object.getPolFracCoeffs(nu_0=nu_0, nterms=nterms_frac)
         pol_angle_coeffs = pol_source_object.getPolAngleCoeffs(nu_0=nu_0, nterms=nterms_angle)
-        # get intensities in frequency
-        calflux = setjy(vis=self.vis, standard=standard, field=field, spw="*")
-        fid = calflux.keys()[0]
+        # get intensity in reference frequency
+        intensity = pol_source_object.flux_scalar(nu_0/1e9)
+        setjy(vis=self.vis, field=field, standard='manual', spw="*", fluxdensity=[intensity,0,0,0], spix=spec_idx, reffreq=str(nu_0/1e9)+"GHz", polindex=pol_frac_coeffs, polangle=pol_angle_coeffs, scalebychan=True, usescratch=False)
 
-        # loop spws
-        for i in range(0, self.nspw):
-            spw_id = self.spw_ids[i]
-            intensity = calflux[fid][spw_id]['fluxd'][0]
-            reffreq_GHz = self.spw_reffreq[i]/1e9
-            setjy(vis=self.vis, field=field, standard='manual', spw=str(spw_id), fluxdensity=[intensity,0,0,0], spix=spec_idx, reffreq=str(reffreq_GHz)+"GHz", polindex=pol_frac_coeffs, polangle=pol_angle_coeffs, scalebychan=True, usescratch=False)
 
-    def calibrateLeakage(self, minsnr=3, poltype="D", caltable="D0", gaintable=[], gainfield=[]):
+    def calibrateLeakage(self, minsnr=3, poltype="Df", caltable="D0", gaintable=[], gainfield=[]):
         if os.path.exists(caltable): rmtables(caltable)
         polcal(vis=self.vis, caltable=caltable, field=self.lcal, spw='', refant=self.refant, poltype=poltype, solint='inf', combine='scan', minsnr=minsnr, gaintable=gaintable, gainfield=gainfield)
         return caltable
@@ -286,17 +336,52 @@ if __name__ == '__main__':
     #lcal     = sys.argv[4]  # Leakage
     #pcal    = sys.argv[5]
     #output  = sys.argv[6]
-    p3c286 = PolarizedSource(knownSource="3c286_2019")
-    spc_idx = p3c286.querySpecIdx(standard="Perley-Butler 2013", epoch="2012")
-    p3c286.filter(nu=2.0*1e9)
 
-    nterms_frac = 2
-    nterms_angle = 2
-    print(spc_idx)
-    print(p3c286.getPolFracCoeffs(nu_0=nu_0, nterms=nterms_frac))
-    print(p3c286.getPolAngleCoeffs(nu_0=nu_0, nterms=nterms_angle))
+    p3c286 = PolarizedSource(knownSource="3c48")
+    p3c286.getCoeffs(standard="Perley-Butler 2013", epoch="2012")
+    #flux_0 = p3c286.flux_scalar(nu_0/1e9)
+
+    print(p3c286.flux_scalar(3.0))
 
 
+    nu = np.linspace(0.3275*1e9, 50.0*1e9, 40)
+
+    alpha = p3c286.fitAlphaBeta(nu, nu_0=3.0*1e9)
+    flux = p3c286.flux_scalar(3.0)*(nu/(3.0*1e9))**(alpha[0]+alpha[1]*np.log(nu/(3.0*1e9)))
+    flux_VLA = p3c286.flux_scalar(3.0)*(nu/(3.0*1e9))**(-0.90366565-0.14262821*np.log(nu/(3.0*1e9)))
+
+    fig, axs = plt.subplots(3)
+    axs[0].plot(nu/1e9, p3c286.flux(nu/1e9), label='Data')
+    axs[0].set_title('Flux Jy')
+    axs[0].plot(nu/1e9, flux, label='Fit')
+    #axs[0].plot(nu/1e9, flux_VLA, label='Fit VLA Example')
+    axs[1].plot(p3c286.getNu()/1e9, p3c286.getPolFrac(), label='Data')
+    axs[1].set_title('Polarization fraction')
+    axs[2].plot(p3c286.getNu()/1e9, p3c286.getPolAngle(), label='Data')
+    axs[2].set_title('Polarization Angle (radians)')
+
+    nterms_frac = 4
+    nterms_angle = 5
+
+    pol_frac = PolFunction(nu_0=3.0*1e9, nterms=nterms_frac)
+    pol_angle = PolFunction(nu_0=3.0*1e9, nterms=nterms_angle)
+
+    frac_coeffs = p3c286.getPolFracCoeffs(nu_0=3.0*1e9, nterms=nterms_frac)
+    angle_coeffs = p3c286.getPolAngleCoeffs(nu_0=3.0*1e9, nterms=nterms_angle, nu_min=2.5*1e9)
+    angle_coeffs_VLA = [1.4215,1.36672,-2.12678,3.48384,-2.71914]
+    frac_coeffs_VLA = [0.021429,0.0391826,0.00234878,-0.0230125]
+    print(frac_coeffs)
+    print(angle_coeffs)
+    axs[1].plot(p3c286.getNu()/1e9, pol_frac.f_eval(p3c286.getNu(), frac_coeffs), label='Fit')
+    #axs[1].plot(p3c286.getNu()/1e9, pol_frac.f_eval(p3c286.getNu(), frac_coeffs_VLA), label='Fit VLA Example')
+    axs[2].plot(p3c286.getNu()/1e9, pol_angle.f_eval(p3c286.getNu(), angle_coeffs), label='Fit')
+    #axs[2].plot(p3c286.getNu()/1e9, pol_angle.f_eval(p3c286.getNu(), angle_coeffs_VLA), label='Fit VLA Example')
+    print(alpha)
+    axs[0].legend(loc='upper right')
+    axs[1].legend(loc='upper right')
+    axs[2].legend(loc='upper right')
+    plt.tight_layout()
+    plt.savefig('test.png')
     #spw_table = queryTable(query="SELECT REF_FREQUENCY FROM "+inputvis+"/SPECTRAL_WINDOW"+" WHERE !FLAG_ROW")
     #spw_ids = spw_table.rownumbers()
     #nspw = len(spw_ids)
