@@ -40,6 +40,7 @@ class PolCalibration(object):
         print(source_dict)
         plotms(vis=self.vis, field=field, correlation='RR', timerange='', antenna=self.refant, xaxis='frequency', yaxis='amp', ydatacolumn='model', showgui=False, plotfile=field+'_RRamp_model.png', overwrite=True)
         plotms(vis=self.vis, field=field, correlation='RL', timerange='', antenna=self.refant, xaxis='frequency', yaxis='amp', ydatacolumn='model', showgui=False, plotfile=field+'_RLamp_model.png', overwrite=True)
+        plotms(vis=self.vis, field=field, correlation='RR', timerange='', antenna=self.refant, xaxis='frequency', yaxis='phase', ydatacolumn='model', showgui=False, plotfile=field+'_RRphase_model.png', overwrite=True)
         plotms(vis=self.vis, field=field, correlation='RL', timerange='', antenna=self.refant, xaxis='frequency', yaxis='phase', ydatacolumn='model', showgui=False, plotfile=field+'_RLphase_model.png', overwrite=True)
         return fluxtable
 
@@ -54,6 +55,7 @@ class PolCalibration(object):
         # get intensity in reference frequency
         intensity = pol_source_object.flux_scalar(nu_0/1e9)
         print("Setting model of: ", pol_source_object.getName())
+        print("Field: ", field)
         print("Reference freq (GHz): ", nu_0/1e9)
         print("I = ", intensity)
         print("Alpha & Beta: ", spec_idx)
@@ -63,7 +65,9 @@ class PolCalibration(object):
         print(source_dict)
         plotms(vis=self.vis, field=field, correlation='RR', timerange='', antenna=self.refant, xaxis='frequency', yaxis='amp', ydatacolumn='model', showgui=False, plotfile=field+'_RRamp_model.png', overwrite=True)
         plotms(vis=self.vis, field=field, correlation='RL', timerange='', antenna=self.refant, xaxis='frequency', yaxis='amp', ydatacolumn='model', showgui=False, plotfile=field+'_RLamp_model.png', overwrite=True)
+        plotms(vis=self.vis, field=field, correlation='RR', timerange='', antenna=self.refant, xaxis='frequency', yaxis='phase', ydatacolumn='model', showgui=False, plotfile=field+'_RRphase_model.png', overwrite=True)
         plotms(vis=self.vis, field=field, correlation='RL', timerange='', antenna=self.refant, xaxis='frequency', yaxis='phase', ydatacolumn='model', showgui=False, plotfile=field+'_RLphase_model.png', overwrite=True)
+
 
     def solveCrossHandDelays(self, solint='inf', combine='scan,spw'):
         print("Solving Cross-hand Delays")
@@ -76,7 +80,7 @@ class PolCalibration(object):
         lastspw=self.spw_ids[-1]
         print("Spw: ", str(firstspw)+'~'+str(lastspw))
         gaincal(vis=self.vis, caltable=caltable, field=self.polanglefield, spw=str(firstspw)+'~'+str(lastspw), refant=self.refant, gaintype="KCROSS", solint=solint, combine=combine, calmode="ap", append=False, gaintable=[''], gainfield=[''], interp=[''], spwmap=[[]], parang=True)
-        if not os.path.exists(caltable): sys.exit("Caltable was not created and cannot continue. Exiting")
+        if not os.path.exists(caltable): sys.exit("Caltable was not created and cannot continue. Exiting...")
         plotcal(caltable=caltable, xaxis='freq', yaxis='delay', antenna=self.refant, showgui=False, figfile=self.vis[:-3]+'.freqvsdelayKcross.png')
         self.kcrosstable = caltable
         return caltable
@@ -98,8 +102,8 @@ class PolCalibration(object):
         spwmap = [0] * self.nspw
         polcal(vis=self.vis, caltable=caltable, field=self.leakagefield, spw=str(firstspw)+'~'+str(lastspw), refant=self.refant, poltype=poltype, solint=solint, spwmap=spwmap, combine='scan', minsnr=minsnr, gaintable=gaintable, gainfield=gainfield)
 
-        if not os.path.exists(caltable): sys.exit("Caltable was not created and cannot continue. Exiting")
-        
+        if not os.path.exists(caltable): sys.exit("Caltable was not created and cannot continue. Exiting...")
+
         flagdata(vis=caltable, mode='clip', correlation='ABS_ALL', clipminmax=[clipmin, clipmax], datacolumn='CPARAM', clipoutside=True, action='apply', flagbackup=False, savepars=False)
 
         plotcal(caltable=caltable,xaxis='freq',yaxis='amp', iteration='antenna', showgui=False, figfile=self.vis[:-3]+'.D0.ampvsfreq.png')
@@ -126,7 +130,7 @@ class PolCalibration(object):
         spwmap0 = [0] * self.nspw
         polcal(vis=self.vis, caltable=caltable, field=self.polanglefield, spw=str(firstspw)+'~'+str(lastspw), refant=self.refant, poltype=poltype, solint=solint, combine='scan', spwmap=[spwmap0, []], minsnr=minsnr, gaintable=gaintable, gainfield=gainfield)
 
-        if not os.path.exists(caltable): sys.exit("Caltable was not created and cannot continue. Exiting")
+        if not os.path.exists(caltable): sys.exit("Caltable was not created and cannot continue. Exiting...")
 
         plotcal(caltable=caltable, xaxis='freq', yaxis='phase', showgui=False, figfile=self.vis[:-3]+'.X0.phasevsfreq.png')
         self.polangletable = caltable
