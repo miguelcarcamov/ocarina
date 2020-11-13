@@ -59,7 +59,7 @@ class PolCalibration(object):
     def solveCrossHandDelays(self):
         print("Solving Cross-hand Delays")
         print("Vis: ", self.vis)
-        print("Field: ", self.leakagefield)
+        print("Field: ", self.polanglefield)
         print("Refant: ", self.refant)
         caltable = self.vis[:-3]+".Kcross"
         if os.path.exists(caltable): rmtables(caltable)
