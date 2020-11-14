@@ -24,19 +24,23 @@ class PolCalibration(object):
         self.leakagetable=''
         self.polangletable=''
 
-    def setModelFluxScale(self, field="", gaintable="", referencefield="", transferfield="", nu_0=0.0):
+    def setModelFluxScale(self, pol_source_object=None, field="", gaintable="", referencefield="", transferfield="", nu_0=0.0):
         fluxtable = self.vis[:-3]+".F0"
         if os.path.exists(fluxtable): rmtables(fluxtable)
-        fluxdict = fluxscale(vis=self.vis, fluxtable=fluxtable, caltable=gaintable, reference=referencefield, transfer=transferfield)
-        spec_idx = fluxdict['2']['spidx'].tolist()
-        I_nu_0 = fluxdict['2']['fitFluxd']
-        reffreq = fluxdict['2']['fitRefFreq']
-        intensity_at_nu_0 = I_nu_0 * (nu_0/reffreq)**(spec_idx[0]+spec_idx[1]*np.log(nu_0/reffreq))
-        print("Setting model of: ", field)
+        # From fluxscale documentation we know that the returned coefficients come from the log10 Taylor expansion
+        fluxdict = fluxscale(vis=self.vis, fluxtable=fluxtable, caltable=gaintable, reference=referencefield, transfer=transferfield, fitorder=4)
+        print(fluxdict)
+        coeffs = fluxdict['2']['spidx'].tolist()
+        pol_source_object.setCoeffs(coeffs)
+        nu_fit = np.linspace(0.3275*1e9, 50.0*1e9, 40)
+        spec_idx = pol_source_object.fitAlphaBeta(nu_fit, nu_0=nu_0)
+        intensity = pol_source_object.flux_scalar(nu_0/1e9)
+        print("Setting model of: ", pol_source_object.getName())
+        print("Field: ", field)
         print("Reference freq (GHz): ", nu_0/1e9)
-        print("I = ", intensity_at_nu_0)
+        print("I = ", intensity)
         print("Alpha & Beta: ", spec_idx)
-        source_dict = setjy(vis=self.vis, field=field, standard='manual', spw='', fluxdensity=[intensity_at_nu_0,0,0,0], spix=spec_idx, reffreq=str(nu_0/1e9)+"GHz", polindex=[], polangle=[], rotmeas=0, interpolation="nearest", scalebychan=True, usescratch=True)
+        source_dict = setjy(vis=self.vis, field=field, standard='manual', spw='', fluxdensity=[intensity,0,0,0], spix=spec_idx, reffreq=str(nu_0/1e9)+"GHz", interpolation="nearest", scalebychan=True, usescratch=True)
         print(source_dict)
         plotms(vis=self.vis, field=field, correlation='RR', timerange='', antenna=self.refant, xaxis='frequency', yaxis='amp', ydatacolumn='model', showgui=False, plotfile=field+'_RRamp_model.png', overwrite=True)
         plotms(vis=self.vis, field=field, correlation='RL', timerange='', antenna=self.refant, xaxis='frequency', yaxis='amp', ydatacolumn='model', showgui=False, plotfile=field+'_RLamp_model.png', overwrite=True)

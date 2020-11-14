@@ -124,7 +124,7 @@ class PolarizedSource(object):
         flux_at_nu = 0.0
 
         for i in range(len(self.spidx_coeffs)):
-            flux_at_nu += self.spidx_coeffs[i][0] * (np.log10(nu)**i)
+            flux_at_nu += self.spidx_coeffs[i] * (np.log10(nu)**i)
 
         return 10**flux_at_nu
 
@@ -132,7 +132,7 @@ class PolarizedSource(object):
         flux_at_nu = np.zeros(len(nu))
 
         for i in range(len(self.spidx_coeffs)):
-            flux_at_nu += self.spidx_coeffs[i][0] * (np.log10(nu)**i)
+            flux_at_nu += self.spidx_coeffs[i] * (np.log10(nu)**i)
 
         return 10**flux_at_nu
 
@@ -141,10 +141,13 @@ class PolarizedSource(object):
         tb_obj = tb()
         tb_obj.open(coeff_table)
         query_table = tb_obj.taql("select * from "+coeff_table+" where Epoch="+epoch)
-        coeffs = query_table.getcol(self.name+"_coeffs")
+        coeffs = query_table.getcol(self.name+"_coeffs").flatten().tolist()
         self.spidx_coeffs = coeffs
         tb_obj.close()
         return coeffs
+
+    def setCoeffs(self, coeffs):
+        self.spidx_coeffs = coeffs
 
     def fitAlphaBeta(self, nu, nu_0=0.0):
         if(not nu_0):
@@ -155,7 +158,7 @@ class PolarizedSource(object):
         i_coeffs = np.random.rand(2)
         source_func_frac = FluxFunction(flux_0=flux_0, xdata=nu, x_0=nu_0)
         source_func_frac.fit(nu, fluxes, i_coeffs)
-        return source_func_frac.getCoeffs()
+        return source_func_frac.getCoeffs().tolist()
 
     def getPolFracCoeffs(self, nu_0=0.0, nterms=3, nu_min=0.0, nu_max=np.inf):
         nu, polfrac = self.filter(self.getNu(), self.getPolFrac(), nu_min, nu_max)
@@ -164,7 +167,7 @@ class PolarizedSource(object):
         ifrac_coeffs = np.random.uniform(0.0, 1.0, nterms)
         source_func_frac = PolFunction(x_0=nu_0, nterms=nterms)
         source_func_frac.fit(nu, polfrac, ifrac_coeffs)
-        return source_func_frac.getCoeffs()
+        return source_func_frac.getCoeffs().tolist()
 
     # Returns pol angle coeffs in radians
     def getPolAngleCoeffs(self, nu_0=0.0, nterms=3, nu_min=0.0, nu_max=np.inf):
@@ -174,4 +177,4 @@ class PolarizedSource(object):
         iangle_coeffs = np.random.uniform(-np.pi, np.pi, nterms)
         source_func_angle = PolFunction(x_0=nu_0, nterms=nterms)
         source_func_angle.fit(nu, polangle, iangle_coeffs)
-        return source_func_angle.getCoeffs()
+        return source_func_angle.getCoeffs().tolist()
