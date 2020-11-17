@@ -14,7 +14,7 @@ from plotms import plotms
 from flagdata import flagdata
 
 class PolCalibration(object):
-    def __init__(self, vis="", spw_ids=np.array([]), polanglefield="", leakagefield="", target="", refant="", level=logging.INFO, **kwargs):
+    def __init__(self, vis="", spw_ids=np.array([]), polanglefield="", leakagefield="", target="", refant="", kcross_refant="", level=logging.INFO, **kwargs):
         initlocals = locals()
         initlocals.pop('self')
         for a_attribute in initlocals.keys():
@@ -76,7 +76,7 @@ class PolCalibration(object):
         plotms(vis=self.vis, field=field, correlation='RL', timerange='', antenna=self.refant, xaxis='frequency', yaxis='phase', ydatacolumn='model', showgui=False, plotfile=field+'_RLphase_model.png', overwrite=True)
 
 
-    def solveCrossHandDelays(self, solint='inf', combine='scan,spw'):
+    def solveCrossHandDelays(self, solint='inf', combine='scan,spw', channels="", refantmode="flex"):
         self.logger.info("Solving Cross-hand Delays")
         self.logger.info("Vis: "+ self.vis)
         self.logger.info("Field: "+ self.polanglefield)
@@ -85,15 +85,16 @@ class PolCalibration(object):
         if os.path.exists(caltable): rmtables(caltable)
         firstspw=self.spw_ids[0]
         lastspw=self.spw_ids[-1]
-        self.logger.info("Spw: ", str(firstspw)+'~'+str(lastspw))
-        gaincal(vis=self.vis, caltable=caltable, field=self.polanglefield, spw=str(firstspw)+'~'+str(lastspw), refant=self.refant, gaintype="KCROSS", solint=solint, combine=combine, calmode="ap", append=False, gaintable=[''], gainfield=[''], interp=[''], spwmap=[[]], parang=True)
+        spw =str(firstspw)+'~'+str(lastspw)+':'+channels
+        self.logger.info("Spw: " + spw)
+        gaincal(vis=self.vis, caltable=caltable, field=self.polanglefield, spw=spw, refant=self.kcross_refant, refantmode=refantmode, gaintype="KCROSS", solint=solint, combine=combine, calmode="ap", append=False, gaintable=[''], gainfield=[''], interp=[''], spwmap=[[]], parang=True)
         if not os.path.exists(caltable): sys.exit("Caltable was not created and cannot continue. Exiting...")
         plotcal(caltable=caltable, xaxis='freq', yaxis='delay', antenna=self.refant, showgui=False, figfile=self.vis[:-3]+'.freqvsdelayKcross.png')
         self.kcrosstable = caltable
         return caltable
 
 
-    def calibrateLeakage(self, solint='inf', minsnr=3.0, poltype="Df", gainfield=[], clipmin=0.0, clipmax=0.25):
+    def calibrateLeakage(self, solint='inf', minsnr=3.0, poltype="Df", gainfield=[], refantmode="flex", clipmin=0.0, clipmax=0.25):
         gaintable=[self.kcrosstable]
         self.logger.info("Leakage calibration")
         self.logger.info("Vis: "+ self.vis)
@@ -101,13 +102,13 @@ class PolCalibration(object):
         print("Gain tables: ", gaintable)
         self.logger.info("Refant: "+ self.refant)
         caltable = self.vis[:-3]+".D0"
-        if(gainfield == []): gainfield=[self.polanglefield]
+        if(gainfield == []): gainfield=['']
         if os.path.exists(caltable): rmtables(caltable)
         firstspw=self.spw_ids[0]
         lastspw=self.spw_ids[-1]
         self.logger.info("Spw: ", str(firstspw)+'~'+str(lastspw))
         spwmap = [0] * self.nspw
-        polcal(vis=self.vis, caltable=caltable, field=self.leakagefield, spw=str(firstspw)+'~'+str(lastspw), refant=self.refant, poltype=poltype, solint=solint, spwmap=spwmap, combine='scan', minsnr=minsnr, gaintable=gaintable, gainfield=gainfield)
+        polcal(vis=self.vis, caltable=caltable, field=self.leakagefield, spw=str(firstspw)+'~'+str(lastspw), refant=self.refant, refantmode=refantmode, poltype=poltype, solint=solint, spwmap=spwmap, combine='scan', minsnr=minsnr, gaintable=gaintable, gainfield=gainfield)
 
         if not os.path.exists(caltable): sys.exit("Caltable was not created and cannot continue. Exiting...")
 
@@ -121,7 +122,7 @@ class PolCalibration(object):
         self.leakagetable = caltable
         return caltable
 
-    def calibratePolAngle(self, solint='inf', minsnr=3.0, poltype="Xf", gainfield=[]):
+    def calibratePolAngle(self, solint='inf', minsnr=3.0, poltype="Xf", refantmode="flex", gainfield=[]):
         gaintable=[self.kcrosstable, self.leakagetable]
         self.logger.info("Polarization angle calibration")
         self.logger.info("Vis: "+ self.vis)
@@ -129,13 +130,13 @@ class PolCalibration(object):
         print("Gain tables: ", gaintable)
         self.logger.info("Refant: "+ self.refant)
         caltable = self.vis[:-3]+".X0"
-        if(gainfield == []): gainfield=[self.polanglefield, self.leakagefield]
+        if(gainfield == []): gainfield=['', '']
         if os.path.exists(caltable): rmtables(caltable)
         firstspw=self.spw_ids[0]
         lastspw=self.spw_ids[-1]
         self.logger.info("Spw: ", str(firstspw)+'~'+str(lastspw))
         spwmap0 = [0] * self.nspw
-        polcal(vis=self.vis, caltable=caltable, field=self.polanglefield, spw=str(firstspw)+'~'+str(lastspw), refant=self.refant, poltype=poltype, solint=solint, combine='scan', spwmap=[spwmap0, []], minsnr=minsnr, gaintable=gaintable, gainfield=gainfield)
+        polcal(vis=self.vis, caltable=caltable, field=self.polanglefield, spw=str(firstspw)+'~'+str(lastspw), refant=self.refant, refantmode=refantmode, poltype=poltype, solint=solint, combine='scan', spwmap=[spwmap0, []], minsnr=minsnr, gaintable=gaintable, gainfield=gainfield)
 
         if not os.path.exists(caltable): sys.exit("Caltable was not created and cannot continue. Exiting...")
 
@@ -149,6 +150,19 @@ class PolCalibration(object):
         plotcal(caltable=self.leakagetable, xaxis='antenna', yaxis='snr', showgui=False, figfile=plotdir+self.vis[:-3]+'.D0.snr.png')
         plotcal(caltable=self.leakagetable, xaxis='real', yaxis='imag', showgui=False, figfile=plotdir+self.vis[:-3]+'.D0.cmplx.png')
 
+    def applySolutions2(self, gainfield=[], applymode="calflagstrict"):
+        gaintables=[self.kcrosstable]
+        firstspw=self.spw_ids[0]
+        lastspw=self.spw_ids[-1]
+        spw = str(firstspw)+'~'+str(lastspw)
+        self.logger.info("Spw: "+ spw)
+        spwmap0 = [0] * self.nspw
+        interp = [''] * len(gaintables)
+        calwt = [False] * len(gaintables)
+        if(gainfield == []): gainfield = ['']
+        applycal(vis=self.vis, field='', spw=spw, gaintable=gaintables, spwmap=[spwmap0], calwt=calwt, applymode=applymode, interp=interp, gainfield=gainfield, antenna='*&*', parang=True, flagbackup=True)
+
+
     def applySolutions(self, gainfield=[], applymode="calflagstrict"):
         #leakagegain.append(fluxtable)
         gaintables=[self.kcrosstable, self.leakagetable, self.polangletable]
@@ -161,7 +175,7 @@ class PolCalibration(object):
         spwmap0 = [0] * self.nspw
         interp = [''] * len(gaintables)
         calwt = [False] * len(gaintables)
-        if(gainfield == []): gainfield = [self.polanglefield, self.leakagefield, self.polanglefield]
+        if(gainfield == []): gainfield = ['', '', '']
         applycal(vis=self.vis, field='', spw=spw, gaintable=gaintables, spwmap=[spwmap0, [], []], calwt=calwt, applymode=applymode, interp=interp, gainfield=gainfield, antenna='*&*', parang=True, flagbackup=True)
 
     def finalPlots(self):
