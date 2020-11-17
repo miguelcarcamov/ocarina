@@ -1,4 +1,5 @@
 import numpy as np
+import logging
 import os
 from __casac__.table import table as tb
 from utils import degreesToRadians, radiansToDegrees, queryTable
@@ -136,7 +137,7 @@ class PolarizedSource(object):
 
         return 10**flux_at_nu
 
-    def getCoeffs(self, standard="Perley-Butler 2013", epoch="2012"):
+    def getCoeffs(self, standard="Perley-Butler 2017", epoch="2017"):
         coeff_table = os.getenv('CASAPATH').split(' ')[0] + '/data/nrao/VLA/standards/' + self.spix_dict[standard]
         tb_obj = tb()
         tb_obj.open(coeff_table)
