@@ -99,7 +99,7 @@ class PolCalibration(object):
         return caltable
 
 
-    def calibrateLeakage(self, solint='inf', minsnr=3.0, poltype="Df", gainfield=[], clipmin=0.0, clipmax=0.25):
+    def calibrateLeakage(self, solint='inf', minsnr=3.0, poltype="Df", gainfield=[], clipmin=0.0, clipmax=0.25, flagclip=False):
         gaintable=[self.kcrosstable]
         self.logger.info("Leakage calibration")
         self.logger.info("Vis: "+ self.vis)
@@ -117,7 +117,8 @@ class PolCalibration(object):
 
         if not os.path.exists(caltable): sys.exit("Caltable was not created and cannot continue. Exiting...")
 
-        flagdata(vis=caltable, mode='clip', correlation='ABS_ALL', clipminmax=[clipmin, clipmax], datacolumn='CPARAM', clipoutside=True, action='apply', flagbackup=False, savepars=False)
+        if(flagclip):
+            flagdata(vis=caltable, mode='clip', correlation='ABS_ALL', clipminmax=[clipmin, clipmax], datacolumn='CPARAM', clipoutside=True, action='apply', flagbackup=False, savepars=False)
 
         plotcal(caltable=caltable,xaxis='freq',yaxis='amp', iteration='antenna', showgui=False, figfile=self.vis[:-3]+'.D0.ampvsfreq.png')
 
