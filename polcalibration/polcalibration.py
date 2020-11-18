@@ -99,7 +99,7 @@ class PolCalibration(object):
         return caltable
 
 
-    def calibrateLeakage(self, solint='inf', minsnr=3.0, poltype="Df", gainfield=[], clipmin=0.0, clipmax=0.25, flagclip=False):
+    def calibrateLeakage(self, solint='inf', minsnr=3.0, poltype="Df", gainfield=[], clipmin=0.0, clipmax=0.25, flagclip=True):
         gaintable=[self.kcrosstable]
         self.logger.info("Leakage calibration")
         self.logger.info("Vis: "+ self.vis)
