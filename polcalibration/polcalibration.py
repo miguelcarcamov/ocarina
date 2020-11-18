@@ -87,7 +87,7 @@ class PolCalibration(object):
         lastspw=self.spw_ids[-1]
 
         if(channels==""):
-            spw =str(firstspw)+'~'+str(lastspw)
+            spw =str(firstspw)+'~'+str(lastspw)+':*'
         else:
             spw =str(firstspw)+'~'+str(lastspw)+':'+channels
 
