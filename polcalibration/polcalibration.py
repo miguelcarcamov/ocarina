@@ -85,7 +85,12 @@ class PolCalibration(object):
         if os.path.exists(caltable): rmtables(caltable)
         firstspw=self.spw_ids[0]
         lastspw=self.spw_ids[-1]
-        spw =str(firstspw)+'~'+str(lastspw)+':'+channels
+        
+        if(channels==""):
+            spw =str(firstspw)+'~'+str(lastspw)
+        else:
+            spw =str(firstspw)+'~'+str(lastspw)+':'+channels
+
         self.logger.info("Spw: " + spw)
         gaincal(vis=self.vis, caltable=caltable, field=self.polanglefield, spw=spw, refant=self.kcross_refant, refantmode=refantmode, gaintype="KCROSS", solint=solint, combine=combine, calmode="ap", append=False, gaintable=[''], gainfield=[''], interp=[''], spwmap=[[]], parang=True)
         if not os.path.exists(caltable): sys.exit("Caltable was not created and cannot continue. Exiting...")
