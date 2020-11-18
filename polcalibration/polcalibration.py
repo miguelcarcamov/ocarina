@@ -85,7 +85,7 @@ class PolCalibration(object):
         if os.path.exists(caltable): rmtables(caltable)
         firstspw=self.spw_ids[0]
         lastspw=self.spw_ids[-1]
-        
+
         if(channels==""):
             spw =str(firstspw)+'~'+str(lastspw)
         else:
@@ -99,7 +99,7 @@ class PolCalibration(object):
         return caltable
 
 
-    def calibrateLeakage(self, solint='inf', minsnr=3.0, poltype="Df", gainfield=[], refantmode="flex", clipmin=0.0, clipmax=0.25):
+    def calibrateLeakage(self, solint='inf', minsnr=3.0, poltype="Df", gainfield=[], clipmin=0.0, clipmax=0.25):
         gaintable=[self.kcrosstable]
         self.logger.info("Leakage calibration")
         self.logger.info("Vis: "+ self.vis)
@@ -113,7 +113,7 @@ class PolCalibration(object):
         lastspw=self.spw_ids[-1]
         self.logger.info("Spw: ", str(firstspw)+'~'+str(lastspw))
         spwmap = [0] * self.nspw
-        polcal(vis=self.vis, caltable=caltable, field=self.leakagefield, spw=str(firstspw)+'~'+str(lastspw), refant=self.refant, refantmode=refantmode, poltype=poltype, solint=solint, spwmap=spwmap, combine='scan', minsnr=minsnr, gaintable=gaintable, gainfield=gainfield)
+        polcal(vis=self.vis, caltable=caltable, field=self.leakagefield, spw=str(firstspw)+'~'+str(lastspw), refant=self.refant, poltype=poltype, solint=solint, spwmap=spwmap, combine='scan', minsnr=minsnr, gaintable=gaintable, gainfield=gainfield)
 
         if not os.path.exists(caltable): sys.exit("Caltable was not created and cannot continue. Exiting...")
 
@@ -127,7 +127,7 @@ class PolCalibration(object):
         self.leakagetable = caltable
         return caltable
 
-    def calibratePolAngle(self, solint='inf', minsnr=3.0, poltype="Xf", refantmode="flex", gainfield=[]):
+    def calibratePolAngle(self, solint='inf', minsnr=3.0, poltype="Xf", gainfield=[]):
         gaintable=[self.kcrosstable, self.leakagetable]
         self.logger.info("Polarization angle calibration")
         self.logger.info("Vis: "+ self.vis)
@@ -141,7 +141,7 @@ class PolCalibration(object):
         lastspw=self.spw_ids[-1]
         self.logger.info("Spw: ", str(firstspw)+'~'+str(lastspw))
         spwmap0 = [0] * self.nspw
-        polcal(vis=self.vis, caltable=caltable, field=self.polanglefield, spw=str(firstspw)+'~'+str(lastspw), refant=self.refant, refantmode=refantmode, poltype=poltype, solint=solint, combine='scan', spwmap=[spwmap0, []], minsnr=minsnr, gaintable=gaintable, gainfield=gainfield)
+        polcal(vis=self.vis, caltable=caltable, field=self.polanglefield, spw=str(firstspw)+'~'+str(lastspw), refant=self.refant, poltype=poltype, solint=solint, combine='scan', spwmap=[spwmap0, []], minsnr=minsnr, gaintable=gaintable, gainfield=gainfield)
 
         if not os.path.exists(caltable): sys.exit("Caltable was not created and cannot continue. Exiting...")
 
