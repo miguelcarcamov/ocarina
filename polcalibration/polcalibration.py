@@ -168,6 +168,18 @@ class PolCalibration(object):
         if(gainfield == []): gainfield = ['']
         applycal(vis=self.vis, field='', spw=spw, gaintable=gaintables, spwmap=[spwmap0], calwt=calwt, applymode=applymode, interp=interp, gainfield=gainfield, antenna='*&*', parang=True, flagbackup=True)
 
+    def applySolutions3(self, gainfield=[], applymode="calflagstrict"):
+        gaintables=[self.kcrosstable, self.leakagetable]
+        firstspw=self.spw_ids[0]
+        lastspw=self.spw_ids[-1]
+        spw = str(firstspw)+'~'+str(lastspw)
+        self.logger.info("Spw: "+ spw)
+        spwmap0 = [0] * self.nspw
+        interp = [''] * len(gaintables)
+        calwt = [False] * len(gaintables)
+        if(gainfield == []): gainfield = ['']
+        applycal(vis=self.vis, field='', spw=spw, gaintable=gaintables, spwmap=[spwmap0], calwt=calwt, applymode=applymode, interp=interp, gainfield=gainfield, antenna='*&*', parang=True, flagbackup=True)
+
 
     def applySolutions(self, gainfield=[], applymode="calflagstrict"):
         #leakagegain.append(fluxtable)
