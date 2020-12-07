@@ -202,6 +202,7 @@ class PolCalibration(object):
             spwmap = []
             spw = ''
             calwt = [False]
+
         else:
             interp = [''] * len(gaintables)
             spw = str(firstspw)+'~'+str(lastspw)
@@ -209,7 +210,7 @@ class PolCalibration(object):
             spwmap = [spwmap0, [], []]
             calwt = [False] * len(gaintables)
         self.logger.info("Spw: "+ spw)
-        if(gainfield == []): gainfield = ['', '', '']
+        if(gainfield == []): gainfield = [''] * len(gaintables)
         applycal(vis=self.vis, field='', spw=spw, gaintable=gaintables, spwmap=spwmap, calwt=calwt, applymode=applymode, interp=interp, gainfield=gainfield, antenna='*&*', parang=True, flagbackup=True)
 
     def finalPlots(self):
