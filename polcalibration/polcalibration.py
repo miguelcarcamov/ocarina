@@ -114,9 +114,15 @@ class PolCalibration(object):
         if os.path.exists(caltable): rmtables(caltable)
         firstspw=self.spw_ids[0]
         lastspw=self.spw_ids[-1]
-        self.logger.info("Spw: ", str(firstspw)+'~'+str(lastspw))
-        spwmap = [0] * self.nspw
-        polcal(vis=self.vis, caltable=caltable, field=self.leakagefield, spw=str(firstspw)+'~'+str(lastspw), refant=self.refant, poltype=poltype, solint=solint, spwmap=spwmap, combine='scan', minsnr=minsnr, gaintable=gaintable, gainfield=gainfield)
+        if(self.old_VLA):
+            spw = ''
+            spwmap = []
+        else:
+            spw = str(firstspw)+'~'+str(lastspw)
+            spwmap0 = [0] * self.nspw
+            spwmap=[spwmap0, []]
+        self.logger.info("Spw: ", spw)
+        polcal(vis=self.vis, caltable=caltable, field=self.leakagefield, spw=spw, refant=self.refant, poltype=poltype, solint=solint, spwmap=spwmap, combine='scan', minsnr=minsnr, gaintable=gaintable, gainfield=gainfield)
 
         if not os.path.exists(caltable): sys.exit("Caltable was not created and cannot continue. Exiting...")
 
@@ -146,9 +152,15 @@ class PolCalibration(object):
         if os.path.exists(caltable): rmtables(caltable)
         firstspw=self.spw_ids[0]
         lastspw=self.spw_ids[-1]
-        self.logger.info("Spw: ", str(firstspw)+'~'+str(lastspw))
-        spwmap0 = [0] * self.nspw
-        polcal(vis=self.vis, caltable=caltable, field=self.polanglefield, spw=str(firstspw)+'~'+str(lastspw), refant=self.refant, poltype=poltype, solint=solint, combine='scan', spwmap=[spwmap0, []], minsnr=minsnr, gaintable=gaintable, gainfield=gainfield)
+        if(self.old_VLA):
+            spw = ''
+            spwmap = []
+        else:
+            spw = str(firstspw)+'~'+str(lastspw)
+            spwmap0 = [0] * self.nspw
+            spwmap=[spwmap0, []]
+        self.logger.info("Spw: ", spw)
+        polcal(vis=self.vis, caltable=caltable, field=self.polanglefield, spw=spw, refant=self.refant, poltype=poltype, solint=solint, combine='scan', spwmap=spwmap, minsnr=minsnr, gaintable=gaintable, gainfield=gainfield)
 
         if not os.path.exists(caltable): sys.exit("Caltable was not created and cannot continue. Exiting...")
 
