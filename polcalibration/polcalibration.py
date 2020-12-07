@@ -14,7 +14,7 @@ from plotms import plotms
 from flagdata import flagdata
 
 class PolCalibration(object):
-    def __init__(self, vis="", spw_ids=np.array([]), polanglefield="", leakagefield="", target="", refant="", kcross_refant="", level=logging.INFO, **kwargs):
+    def __init__(self, vis="", spw_ids=np.array([]), polanglefield="", leakagefield="", target="", refant="", kcross_refant="", old_VLA=False, level=logging.INFO, **kwargs):
         initlocals = locals()
         initlocals.pop('self')
         for a_attribute in initlocals.keys():
@@ -200,7 +200,10 @@ class PolCalibration(object):
         spw = str(firstspw)+'~'+str(lastspw)
         self.logger.info("Spw: "+ spw)
         spwmap0 = [0] * self.nspw
-        interp = [''] * len(gaintables)
+        if(self.old_vla):
+            interp = ['nearest'] * len(gaintables)
+        else:
+            interp = [''] * len(gaintables)
         calwt = [False] * len(gaintables)
         if(gainfield == []): gainfield = ['', '', '']
         applycal(vis=self.vis, field='', spw=spw, gaintable=gaintables, spwmap=[spwmap0, [], []], calwt=calwt, applymode=applymode, interp=interp, gainfield=gainfield, antenna='*&*', parang=True, flagbackup=True)
