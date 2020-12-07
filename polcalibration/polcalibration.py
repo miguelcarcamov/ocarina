@@ -99,7 +99,7 @@ class PolCalibration(object):
         return caltable
 
 
-    def calibrateLeakage(self, solint='inf', minsnr=3.0, poltype="Df", gainfield=[], clipmin=0.0, clipmax=0.25, flagclip=True):
+    def calibrateLeakage(self, solint='inf', minsnr=3.0, poltype="Df", gainfield=[], clipmin=0.0, clipmax=0.25, flagclip=True, interp='linear'):
         if(self.kcrosstable == ""):
             gaintable=[]
         else:
@@ -117,12 +117,13 @@ class PolCalibration(object):
         if(self.old_VLA):
             spw = ''
             spwmap = []
+            interp='nearest'
         else:
             spw = str(firstspw)+'~'+str(lastspw)
             spwmap0 = [0] * self.nspw
             spwmap=[spwmap0, []]
         self.logger.info("Spw: ", spw)
-        polcal(vis=self.vis, caltable=caltable, field=self.leakagefield, spw=spw, refant=self.refant, poltype=poltype, solint=solint, spwmap=spwmap, combine='scan', minsnr=minsnr, gaintable=gaintable, gainfield=gainfield)
+        polcal(vis=self.vis, caltable=caltable, field=self.leakagefield, spw=spw, refant=self.refant, poltype=poltype, solint=solint, spwmap=spwmap, combine='scan', interp=interp, minsnr=minsnr, gaintable=gaintable, gainfield=gainfield)
 
         if not os.path.exists(caltable): sys.exit("Caltable was not created and cannot continue. Exiting...")
 
@@ -137,7 +138,7 @@ class PolCalibration(object):
         self.leakagetable = caltable
         return caltable
 
-    def calibratePolAngle(self, solint='inf', minsnr=3.0, poltype="Xf", gainfield=[]):
+    def calibratePolAngle(self, solint='inf', minsnr=3.0, poltype="Xf", gainfield=[], interp='linear'):
         if(self.kcrosstable == ""):
             gaintable=[self.leakagetable]
         else:
@@ -155,12 +156,13 @@ class PolCalibration(object):
         if(self.old_VLA):
             spw = ''
             spwmap = []
+            interp = 'nearest'
         else:
             spw = str(firstspw)+'~'+str(lastspw)
             spwmap0 = [0] * self.nspw
             spwmap=[spwmap0, []]
         self.logger.info("Spw: ", spw)
-        polcal(vis=self.vis, caltable=caltable, field=self.polanglefield, spw=spw, refant=self.refant, poltype=poltype, solint=solint, combine='scan', spwmap=spwmap, minsnr=minsnr, gaintable=gaintable, gainfield=gainfield)
+        polcal(vis=self.vis, caltable=caltable, field=self.polanglefield, spw=spw, refant=self.refant, poltype=poltype, solint=solint, combine='scan', spwmap=spwmap, interp=interp, minsnr=minsnr, gaintable=gaintable, gainfield=gainfield)
 
         if not os.path.exists(caltable): sys.exit("Caltable was not created and cannot continue. Exiting...")
 
