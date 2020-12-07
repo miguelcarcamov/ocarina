@@ -196,18 +196,19 @@ class PolCalibration(object):
         self.logger.info("Applying solutions")
         print("Gain tables: ", gaintables)
         firstspw=self.spw_ids[0]
-        lastspw=self.spw_ids[-1]    
+        lastspw=self.spw_ids[-1]
         if(self.old_VLA):
             interp = ['nearest'] * len(gaintables)
             spwmap = []
+            spw = ''
             calwt = [False]
         else:
             interp = [''] * len(gaintables)
             spw = str(firstspw)+'~'+str(lastspw)
-            self.logger.info("Spw: "+ spw)
             spwmap0 = [0] * self.nspw
             spwmap = [spwmap0, [], []]
             calwt = [False] * len(gaintables)
+        self.logger.info("Spw: "+ spw)
         if(gainfield == []): gainfield = ['', '', '']
         applycal(vis=self.vis, field='', spw=spw, gaintable=gaintables, spwmap=spwmap, calwt=calwt, applymode=applymode, interp=interp, gainfield=gainfield, antenna='*&*', parang=True, flagbackup=True)
 
