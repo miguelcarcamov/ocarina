@@ -200,7 +200,7 @@ class PolCalibration(object):
         spw = str(firstspw)+'~'+str(lastspw)
         self.logger.info("Spw: "+ spw)
         spwmap0 = [0] * self.nspw
-        if(self.old_vla):
+        if(self.old_VLA):
             interp = ['nearest'] * len(gaintables)
         else:
             interp = [''] * len(gaintables)
