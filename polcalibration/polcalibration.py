@@ -214,16 +214,17 @@ class PolCalibration(object):
             spwmap = []
             spw = ''
             calwt = [False]
-
+            selectdata=False
         else:
             interp = [''] * len(gaintables)
             spw = str(firstspw)+'~'+str(lastspw)
             spwmap0 = [0] * self.nspw
             spwmap = [spwmap0, [], []]
             calwt = [False] * len(gaintables)
+            selectdata=True
         self.logger.info("Spw: "+ spw)
         if(gainfield == []): gainfield = [''] * len(gaintables)
-        applycal(vis=self.vis, field='', spw=spw, gaintable=gaintables, spwmap=spwmap, calwt=calwt, applymode=applymode, interp=interp, gainfield=gainfield, antenna='*&*', parang=True, flagbackup=True)
+        applycal(vis=self.vis, field='', spw=spw, gaintable=gaintables, selectdata=selectdata, spwmap=spwmap, calwt=calwt, applymode=applymode, interp=interp, gainfield=gainfield, antenna='*&*', parang=True, flagbackup=True)
 
     def finalPlots(self):
         plotms(vis=self.vis, field=self.polanglefield, correlation='',
