@@ -100,14 +100,17 @@ class PolCalibration(object):
 
 
     def calibrateLeakage(self, solint='inf', minsnr=3.0, poltype="Df", gainfield=[], clipmin=0.0, clipmax=0.25, flagclip=True):
-        gaintable=[self.kcrosstable]
+        if(self.kcrosstable == ""):
+            gaintable=[]
+        else:
+            gaintable=[self.kcrosstable]
         self.logger.info("Leakage calibration")
         self.logger.info("Vis: "+ self.vis)
         self.logger.info("Field: "+ self.leakagefield)
         print("Gain tables: ", gaintable)
         self.logger.info("Refant: "+ self.refant)
         caltable = self.vis[:-3]+".D0"
-        if(gainfield == []): gainfield=['']
+        if(gainfield == []): gainfield=[''] * len(gaintable)
         if os.path.exists(caltable): rmtables(caltable)
         firstspw=self.spw_ids[0]
         lastspw=self.spw_ids[-1]
@@ -129,14 +132,17 @@ class PolCalibration(object):
         return caltable
 
     def calibratePolAngle(self, solint='inf', minsnr=3.0, poltype="Xf", gainfield=[]):
-        gaintable=[self.kcrosstable, self.leakagetable]
+        if(self.kcrosstable == ""):
+            gaintable=[self.leakagetable]
+        else:
+            gaintable=[self.kcrosstable, self.leakagetable]
         self.logger.info("Polarization angle calibration")
         self.logger.info("Vis: "+ self.vis)
         self.logger.info("Field: "+ self.polanglefield)
         print("Gain tables: ", gaintable)
         self.logger.info("Refant: "+ self.refant)
         caltable = self.vis[:-3]+".X0"
-        if(gainfield == []): gainfield=['', '']
+        if(gainfield == []): gainfield=[''] * len(gaintable)
         if os.path.exists(caltable): rmtables(caltable)
         firstspw=self.spw_ids[0]
         lastspw=self.spw_ids[-1]
@@ -183,7 +189,10 @@ class PolCalibration(object):
 
     def applySolutions(self, gainfield=[], applymode="calflagstrict"):
         #leakagegain.append(fluxtable)
-        gaintables=[self.kcrosstable, self.leakagetable, self.polangletable]
+        if(self.kcrosstable == ""):
+            gaintables=[self.leakagetable, self.polangletable]
+        else:
+            gaintables=[self.kcrosstable, self.leakagetable, self.polangletable]
         self.logger.info("Applying solutions")
         print("Gain tables: ", gaintables)
         firstspw=self.spw_ids[0]
