@@ -197,16 +197,19 @@ class PolCalibration(object):
         print("Gain tables: ", gaintables)
         firstspw=self.spw_ids[0]
         lastspw=self.spw_ids[-1]
-        spw = str(firstspw)+'~'+str(lastspw)
         self.logger.info("Spw: "+ spw)
-        spwmap0 = [0] * self.nspw
         if(self.old_VLA):
             interp = ['nearest'] * len(gaintables)
+            spwmap = []
+            calwt = [False]
         else:
             interp = [''] * len(gaintables)
-        calwt = [False] * len(gaintables)
+            spw = str(firstspw)+'~'+str(lastspw)
+            spwmap0 = [0] * self.nspw
+            spwmap = [spwmap0, [], []]
+            calwt = [False] * len(gaintables)
         if(gainfield == []): gainfield = ['', '', '']
-        applycal(vis=self.vis, field='', spw=spw, gaintable=gaintables, spwmap=[spwmap0, [], []], calwt=calwt, applymode=applymode, interp=interp, gainfield=gainfield, antenna='*&*', parang=True, flagbackup=True)
+        applycal(vis=self.vis, field='', spw=spw, gaintable=gaintables, spwmap=spwmap, calwt=calwt, applymode=applymode, interp=interp, gainfield=gainfield, antenna='*&*', parang=True, flagbackup=True)
 
     def finalPlots(self):
         plotms(vis=self.vis, field=self.polanglefield, correlation='',
