@@ -7,7 +7,7 @@ from function import Function, FluxFunction, PolFunction
 
 # Object that takes information of different known polarized sources from https://science.nrao.edu/facilities/vla/docs/manuals/obsguide/modes/pol
 class PolarizedSource(object):
-    def __init__(self, nu=np.array([]), polangle=np.array([]), polfrac=np.array([]), name="", knownSource="", **kwargs):
+    def __init__(self, nu=np.array([]), polangle=np.array([]), polfrac=np.array([]), name="", knownSource="", level=logging.INFO, **kwargs):
         initlocals = locals()
         initlocals.pop('self')
         for a_attribute in initlocals.keys():
@@ -29,6 +29,9 @@ class PolarizedSource(object):
         # Pol fraction in percentage to fraction
         self.polfrac /= 100.0
         self.spidx_coeffs = []
+
+        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger.info("Creating "+self.__class__.__name__)
 
     def p3c48(self):
         self.nu = np.array([1.05, 1.45, 1.64, 1.95, 2.45, 2.95, 3.25, 3.75, 4.50, 5.00, 6.50, 7.25, 8.10, 8.80, 12.8, 13.7, 14.6, 15.5, 18.1, 19.0, 22.4, 23.3, 36.5, 43.5])
@@ -179,3 +182,14 @@ class PolarizedSource(object):
         source_func_angle = PolFunction(x_0=nu_0, nterms=nterms)
         source_func_angle.fit(nu, polangle, iangle_coeffs)
         return source_func_angle.getCoeffs().tolist()
+
+    def getSourceInformation(self, nu_0=0.0):
+        nu_fit = np.linspace(0.3275*1e9, 50.0*1e9, 40)
+        spec_idx = self.fitAlphaBeta(nu_fit, nu_0=nu_0)
+        intensity = self.flux_scalar(nu_0/1e9)
+        return intensity, spec_idx
+
+    def getSourcePolInformation(self, nu_0=0.0, nterms_angle=3, nterms_frac=3, nu_min=0.0, nu_max=np.inf):
+        pol_frac_coeffs = self.getPolFracCoeffs(nu_0=nu_0, nterms=nterms_frac, nu_min=nu_min, nu_max=nu_max)
+        pol_angle_coeffs = self.getPolAngleCoeffs(nu_0=nu_0, nterms=nterms_angle, nu_min=nu_min, nu_max=nu_max)
+        return pol_angle_coeffs, pol_frac_coeffs

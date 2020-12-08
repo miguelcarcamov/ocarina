@@ -12,9 +12,10 @@ from fluxscale import fluxscale
 from rmtables import rmtables
 from plotms import plotms
 from flagdata import flagdata
+from utils import queryTable
 
 class PolCalibration(object):
-    def __init__(self, vis="", spw_ids=np.array([]), polanglefield="", leakagefield="", target="", refant="", kcross_refant="", old_VLA=False, level=logging.INFO, **kwargs):
+    def __init__(self, vis="", spw_ids=np.array([]), polanglefield="", leakagefield="", target="", refant="", kcross_refant="", nu_0=None, nu_min=None, nu_max=None, old_VLA=False, level=logging.INFO, **kwargs):
         initlocals = locals()
         initlocals.pop('self')
         for a_attribute in initlocals.keys():
@@ -27,7 +28,28 @@ class PolCalibration(object):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.logger.info("Creating "+self.__class__.__name__)
 
-    def setModelFluxScale(self, pol_source_object=None, field="", gaintable="", referencefield="", transferfield="", nu_0=0.0):
+        if(self.nu_0 == None):
+            spw_table = queryTable(table=self.vis, query="SELECT REF_FREQUENCY FROM "+self.vis+"/SPECTRAL_WINDOW"+" WHERE !FLAG_ROW")
+            spw_reffreqs = spw_table.getcol("REF_FREQUENCY")
+            self.nu_0 = np.median(spw_reffreqs)
+
+        if(self.nu_min == None):
+            min_freq = queryTable(table=self.vis, query="SELECT GMIN(CHAN_FREQ) AS FREQ_MIN FROM "+self.vis+"/SPECTRAL_WINDOW"+" WHERE !FLAG_ROW")
+            self.nu_min = min_freq.getcol("FREQ_MIN")[0]
+
+        if(self.nu_max == None):
+            max_freq = queryTable(table=self.vis, query="SELECT GMAX(CHAN_FREQ) AS FREQ_MAX FROM "+self.vis+"/SPECTRAL_WINDOW"+" WHERE !FLAG_ROW")
+            self.nu_max = max_freq.getcol("FREQ_MAX")[0]
+
+        if(len(spw_ids)==0):
+            spw_table = queryTable(table=self.vis, query="SELECT REF_FREQUENCY FROM "+self.vis+"/SPECTRAL_WINDOW"+" WHERE !FLAG_ROW")
+            self.spw_ids = spw_table.rownumbers()
+
+        print("Ref freq: ", self.nu_0)
+        print("Min freq: ", self.nu_min)
+        print("Max freq: ", self.nu_max)
+
+    def setModelFluxScale(self, pol_source_object=None, field="", gaintable="", referencefield="", transferfield="", usescratch=False):
         fluxtable = self.vis[:-3]+".F0"
         if os.path.exists(fluxtable): rmtables(fluxtable)
         # From fluxscale documentation we know that the returned coefficients come from the log10 Taylor expansion
@@ -35,15 +57,13 @@ class PolCalibration(object):
         print(fluxdict)
         coeffs = fluxdict['2']['spidx'].tolist()
         pol_source_object.setCoeffs(coeffs)
-        nu_fit = np.linspace(0.3275*1e9, 50.0*1e9, 40)
-        spec_idx = pol_source_object.fitAlphaBeta(nu_fit, nu_0=nu_0)
-        intensity = pol_source_object.flux_scalar(nu_0/1e9)
+        intensity, spec_idx = pol_source_object.getSourceInformation(nu_0=self.nu_0)
         self.logger.info("Setting model of: "+pol_source_object.getName())
         self.logger.info("Field: "+ field)
-        self.logger.info("Reference freq (GHz): "+ str(nu_0/1e9))
+        self.logger.info("Reference freq (GHz): "+ str(self.nu_0/1e9))
         self.logger.info("I = "+ str(intensity))
         print("Alpha & Beta: ", spec_idx)
-        source_dict = setjy(vis=self.vis, field=field, standard='manual', spw='', fluxdensity=[intensity,0,0,0], spix=spec_idx, reffreq=str(nu_0/1e9)+"GHz", interpolation="nearest", scalebychan=True, usescratch=True)
+        source_dict = setjy(vis=self.vis, field=field, standard='manual', spw='', fluxdensity=[intensity,0,0,0], spix=spec_idx, reffreq=str(self.nu_0/1e9)+"GHz", interpolation="nearest", scalebychan=True, usescratch=usescratch)
         print(source_dict)
         plotms(vis=self.vis, field=field, correlation='RR', timerange='', antenna=self.refant, xaxis='frequency', yaxis='amp', ydatacolumn='model', showgui=False, plotfile=field+'_RRamp_model.png', overwrite=True)
         plotms(vis=self.vis, field=field, correlation='RL', timerange='', antenna=self.refant, xaxis='frequency', yaxis='amp', ydatacolumn='model', showgui=False, plotfile=field+'_RLamp_model.png', overwrite=True)
@@ -51,24 +71,21 @@ class PolCalibration(object):
         plotms(vis=self.vis, field=field, correlation='RL', timerange='', antenna=self.refant, xaxis='frequency', yaxis='phase', ydatacolumn='model', showgui=False, plotfile=field+'_RLphase_model.png', overwrite=True)
         return fluxtable
 
-    def setModel(self, pol_source_object = None, standard="Perley-Butler 2017", field="", epoch="2017", nu_0=0.0, nterms_angle=3, nterms_frac=3, nu_min=0.0, nu_max=np.inf):
+    def setModel(self, pol_source_object = None, standard="Perley-Butler 2017", field="", epoch="2017", nterms_angle=3, nterms_frac=3, usescratch=False):
 
         # get spectral idx coeffs from VLA tables
         pol_source_object.getCoeffs(standard=standard, epoch=epoch)
-        nu_fit = np.linspace(0.3275*1e9, 50.0*1e9, 40)
-        spec_idx = pol_source_object.fitAlphaBeta(nu_fit, nu_0=nu_0)
-        pol_frac_coeffs = pol_source_object.getPolFracCoeffs(nu_0=nu_0, nterms=nterms_frac, nu_min=nu_min, nu_max=nu_max)
-        pol_angle_coeffs = pol_source_object.getPolAngleCoeffs(nu_0=nu_0, nterms=nterms_angle, nu_min=nu_min, nu_max=nu_max)
+        intensity, spec_idx = pol_source_object.getSourceInformation(nu_0=self.nu_0)
+        pol_angle_coeffs, pol_frac_coeffs = getSourcePolInformation(nu_0=self.nu_0, nterms=nterms_frac, nu_min=self.nu_min, nu_max=self.nu_max)
         # get intensity in reference frequency
-        intensity = pol_source_object.flux_scalar(nu_0/1e9)
         self.logger.info("Setting model of: "+pol_source_object.getName())
         self.logger.info("Field: "+ field)
-        self.logger.info("Reference freq (GHz): "+ str(nu_0/1e9))
+        self.logger.info("Reference freq (GHz): "+ str(self.nu_0/1e9))
         self.logger.info("I = "+ str(intensity))
         print("Alpha & Beta: ", spec_idx)
         print("Pol fraction coeffs: ", pol_frac_coeffs)
         print("Pol angle coeffs: ", pol_angle_coeffs)
-        source_dict = setjy(vis=self.vis, field=field, standard='manual', spw='', fluxdensity=[intensity,0,0,0], spix=spec_idx, reffreq=str(nu_0/1e9)+"GHz", polindex=pol_frac_coeffs, polangle=pol_angle_coeffs, interpolation="nearest", scalebychan=True, usescratch=True)
+        source_dict = setjy(vis=self.vis, field=field, standard='manual', spw='', fluxdensity=[intensity,0,0,0], spix=spec_idx, reffreq=str(self.nu_0/1e9)+"GHz", polindex=pol_frac_coeffs, polangle=pol_angle_coeffs, interpolation="nearest", scalebychan=True, usescratch=usescratch)
         print(source_dict)
         plotms(vis=self.vis, field=field, correlation='RR', timerange='', antenna=self.refant, xaxis='frequency', yaxis='amp', ydatacolumn='model', showgui=False, plotfile=field+'_RRamp_model.png', overwrite=True)
         plotms(vis=self.vis, field=field, correlation='RL', timerange='', antenna=self.refant, xaxis='frequency', yaxis='amp', ydatacolumn='model', showgui=False, plotfile=field+'_RLamp_model.png', overwrite=True)
@@ -99,11 +116,12 @@ class PolCalibration(object):
         return caltable
 
 
-    def calibrateLeakage(self, solint='inf', minsnr=3.0, poltype="Df", gainfield=[], clipmin=0.0, clipmax=0.25, flagclip=True, interpmode='linear'):
-        if(self.kcrosstable == ""):
-            gaintable=[]
-        else:
-            gaintable=[self.kcrosstable]
+    def calibrateLeakage(self, solint='inf', minsnr=3.0, poltype="Df", gaintable=[], gainfield=[], clipmin=0.0, clipmax=0.25, flagclip=True, interpmode='linear'):
+        if(gaintable == []):
+            if(self.kcrosstable == ""):
+                gaintable=[]
+            else:
+                gaintable=[self.kcrosstable]
         self.logger.info("Leakage calibration")
         self.logger.info("Vis: "+ self.vis)
         self.logger.info("Field: "+ self.leakagefield)
@@ -139,11 +157,12 @@ class PolCalibration(object):
         self.leakagetable = caltable
         return caltable
 
-    def calibratePolAngle(self, solint='inf', minsnr=3.0, poltype="Xf", gainfield=[], interpmode='linear'):
-        if(self.kcrosstable == ""):
-            gaintable=[self.leakagetable]
-        else:
-            gaintable=[self.kcrosstable, self.leakagetable]
+    def calibratePolAngle(self, solint='inf', minsnr=3.0, poltype="Xf", gaintable=[], gainfield=[], interpmode='linear'):
+        if(gaintable == []):
+            if(self.kcrosstable == ""):
+                gaintable=[self.leakagetable]
+            else:
+                gaintable=[self.kcrosstable, self.leakagetable]
         self.logger.info("Polarization angle calibration")
         self.logger.info("Vis: "+ self.vis)
         self.logger.info("Field: "+ self.polanglefield)
@@ -203,12 +222,13 @@ class PolCalibration(object):
         applycal(vis=self.vis, field='', spw=spw, gaintable=gaintables, spwmap=[spwmap0], calwt=calwt, applymode=applymode, interp=interp, gainfield=gainfield, antenna='*&*', parang=True, flagbackup=True)
 
 
-    def applySolutions(self, gainfield=[], applymode="calflagstrict"):
+    def applySolutions(self, gaintables=[], gainfield=[], applymode="calflagstrict"):
         #leakagegain.append(fluxtable)
-        if(self.kcrosstable == ""):
-            gaintables=[self.leakagetable, self.polangletable]
-        else:
-            gaintables=[self.kcrosstable, self.leakagetable, self.polangletable]
+        if(gaintables == []):
+            if(self.kcrosstable == ""):
+                gaintables=[self.leakagetable, self.polangletable]
+            else:
+                gaintables=[self.kcrosstable, self.leakagetable, self.polangletable]
         self.logger.info("Applying solutions")
         print("Gain tables: ", gaintables)
         firstspw=self.spw_ids[0]
