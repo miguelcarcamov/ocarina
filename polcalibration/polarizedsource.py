@@ -183,7 +183,8 @@ class PolarizedSource(object):
         source_func_angle.fit(nu, polangle, iangle_coeffs)
         return source_func_angle.getCoeffs().tolist()
 
-    def getSourceInformation(self, nu_0=0.0):
+    def getSourceInformation(self, nu_0=0.0, standard="Perley-Butler 2017", epoch="2017"):
+        self.getCoeffs(standard=standard, epoch=epoch)
         nu_fit = np.linspace(0.3275*1e9, 50.0*1e9, 40)
         spec_idx = self.fitAlphaBeta(nu_fit, nu_0=nu_0)
         intensity = self.flux_scalar(nu_0/1e9)

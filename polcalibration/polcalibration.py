@@ -61,7 +61,7 @@ class PolCalibration(object):
     def getSpwIds(self):
         return self.spw_ids
 
-    def setModelFluxScale(self, pol_source_object=None, field="", gaintable="", referencefield="", transferfield="", usescratch=False):
+    def setUnknownModel(self, pol_source_object=None, field="", gaintable="", referencefield="", transferfield="", usescratch=False):
         fluxtable = self.vis[:-3]+".F0"
         if os.path.exists(fluxtable): rmtables(fluxtable)
         # From fluxscale documentation we know that the returned coefficients come from the log10 Taylor expansion
@@ -83,10 +83,9 @@ class PolCalibration(object):
         plotms(vis=self.vis, field=field, correlation='RL', timerange='', antenna=self.refant, xaxis='frequency', yaxis='phase', ydatacolumn='model', showgui=False, plotfile=field+'_RLphase_model.png', overwrite=True)
         return fluxtable
 
-    def setModel(self, pol_source_object = None, standard="Perley-Butler 2017", field="", epoch="2017", nterms_angle=3, nterms_frac=3, usescratch=False):
+    def setKnownModel(self, pol_source_object = None, standard="Perley-Butler 2017", field="", epoch="2017", nterms_angle=3, nterms_frac=3, usescratch=False):
 
         # get spectral idx coeffs from VLA tables
-        pol_source_object.getCoeffs(standard=standard, epoch=epoch)
         intensity, spec_idx = pol_source_object.getSourceInformation(nu_0=self.nu_0)
         pol_angle_coeffs, pol_frac_coeffs = getSourcePolInformation(nu_0=self.nu_0, nterms_angle=nterms_angle, nterms_frac=nterms_frac, nu_min=self.nu_min, nu_max=self.nu_max)
         # get intensity in reference frequency
