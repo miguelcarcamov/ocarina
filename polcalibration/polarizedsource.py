@@ -15,7 +15,8 @@ class PolarizedSource(object):
         self.__dict__.update(kwargs)
         self.name = ""
         self.spix_dict = {'Perley-Butler 2013' : 'PerleyButler2013Coeffs', 'Perley-Butler 2017' : 'PerleyButler2017Coeffs', 'Scaife-Heald 2012' : 'ScaifeHeald2012Coeffs'}
-        switcher = {"3c48" : "p3c48", "3c48_2019": "p3c48_2019", "3c138" : "p3c138", "3c138_2019" : "p3c138_2019", "3c286": "p3c286", "3c286_2019": "p3c286_2019", "3c147" : "p3c147", "3c147_2019": "p3c147_2019"}
+        switcher = {"3C48" : "p3c48", "3C48_2019": "p3c48_2019", "3C138" : "p3c138", "3C138_2019" : "p3c138_2019", "3C286": "p3c286", "3C286_2019": "p3c286_2019", "3C147" : "p3c147", "3C147_2019": "p3c147_2019"}
+        self.source = self.source.upper()
         if self.source != "":
             method = getattr(self, switcher.get(self.source, "init_empty"))
             method()
