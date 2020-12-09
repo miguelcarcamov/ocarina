@@ -209,57 +209,57 @@ class PolCalibration(object):
         plotcal(caltable=self.leakagetable, xaxis='real', yaxis='imag', showgui=False, figfile=plotdir+self.vis[:-3]+'.D0.cmplx.png')
 
     def applySolutions2(self, gainfield=[], applymode="calflagstrict"):
-        gaintables=[self.kcrosstable]
+        gaintable=[self.kcrosstable]
         firstspw=self.spw_ids[0]
         lastspw=self.spw_ids[-1]
         spw = str(firstspw)+'~'+str(lastspw)
         self.logger.info("Spw: "+ spw)
         spwmap0 = [0] * self.nspw
-        interp = [''] * len(gaintables)
-        calwt = [False] * len(gaintables)
+        interp = [''] * len(gaintable)
+        calwt = [False] * len(gaintable)
         if(gainfield == []): gainfield = ['']
-        applycal(vis=self.vis, field='', spw=spw, gaintable=gaintables, spwmap=[spwmap0], calwt=calwt, applymode=applymode, interp=interp, gainfield=gainfield, antenna='*&*', parang=True, flagbackup=True)
+        applycal(vis=self.vis, field='', spw=spw, gaintable=gaintable, spwmap=[spwmap0], calwt=calwt, applymode=applymode, interp=interp, gainfield=gainfield, antenna='*&*', parang=True, flagbackup=True)
 
     def applySolutions3(self, gainfield=[], applymode="calflagstrict"):
-        gaintables=[self.kcrosstable, self.leakagetable]
+        gaintable=[self.kcrosstable, self.leakagetable]
         firstspw=self.spw_ids[0]
         lastspw=self.spw_ids[-1]
         spw = str(firstspw)+'~'+str(lastspw)
         self.logger.info("Spw: "+ spw)
         spwmap0 = [0] * self.nspw
-        interp = [''] * len(gaintables)
-        calwt = [False] * len(gaintables)
+        interp = [''] * len(gaintable)
+        calwt = [False] * len(gaintable)
         if(gainfield == []): gainfield = ['']
-        applycal(vis=self.vis, field='', spw=spw, gaintable=gaintables, spwmap=[spwmap0], calwt=calwt, applymode=applymode, interp=interp, gainfield=gainfield, antenna='*&*', parang=True, flagbackup=True)
+        applycal(vis=self.vis, field='', spw=spw, gaintable=gaintable, spwmap=[spwmap0], calwt=calwt, applymode=applymode, interp=interp, gainfield=gainfield, antenna='*&*', parang=True, flagbackup=True)
 
 
-    def applySolutions(self, gaintables=[], gainfield=[], applymode="calflagstrict"):
+    def applySolutions(self, gaintable=[], gainfield=[], applymode="calflagstrict"):
         #leakagegain.append(fluxtable)
-        if(gaintables == []):
+        if(gaintable == []):
             if(self.kcrosstable == ""):
-                gaintables=[self.leakagetable, self.polangletable]
+                gaintable=[self.leakagetable, self.polangletable]
             else:
-                gaintables=[self.kcrosstable, self.leakagetable, self.polangletable]
+                gaintable=[self.kcrosstable, self.leakagetable, self.polangletable]
         self.logger.info("Applying solutions")
-        print("Gain tables: ", gaintables)
+        print("Gain tables: ", gaintable)
         firstspw=self.spw_ids[0]
         lastspw=self.spw_ids[-1]
         if(self.old_VLA):
-            interp = ['nearest'] * len(gaintables)
+            interp = ['nearest'] * len(gaintable)
             spwmap = []
             spw = ''
             calwt = [False]
             selectdata=False
         else:
-            interp = [''] * len(gaintables)
+            interp = [''] * len(gaintable)
             spw = str(firstspw)+'~'+str(lastspw)
             spwmap0 = [0] * self.nspw
             spwmap = [spwmap0, [], []]
-            calwt = [False] * len(gaintables)
+            calwt = [False] * len(gaintable)
             selectdata=True
         self.logger.info("Spw: "+ spw)
-        if(gainfield == []): gainfield = [''] * len(gaintables)
-        applycal(vis=self.vis, field='', spw=spw, gaintable=gaintables, selectdata=selectdata, spwmap=spwmap, calwt=calwt, applymode=applymode, interp=interp, gainfield=gainfield, antenna='*&*', parang=True, flagbackup=True)
+        if(gainfield == []): gainfield = [''] * len(gaintable)
+        applycal(vis=self.vis, field='', spw=spw, gaintable=gaintable, selectdata=selectdata, spwmap=spwmap, calwt=calwt, applymode=applymode, interp=interp, gainfield=gainfield, antenna='*&*', parang=True, flagbackup=True)
 
     def finalPlots(self):
         plotms(vis=self.vis, field=self.polanglefield, correlation='',
