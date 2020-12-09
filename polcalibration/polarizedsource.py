@@ -7,7 +7,7 @@ from function import Function, FluxFunction, PolFunction
 
 # Object that takes information of different known polarized sources from https://science.nrao.edu/facilities/vla/docs/manuals/obsguide/modes/pol
 class PolarizedSource(object):
-    def __init__(self, nu=np.array([]), polangle=np.array([]), polfrac=np.array([]), name="", knownSource="", level=logging.INFO, **kwargs):
+    def __init__(self, nu=np.array([]), polangle=np.array([]), polfrac=np.array([]), name="", source="", level=logging.INFO, **kwargs):
         initlocals = locals()
         initlocals.pop('self')
         for a_attribute in initlocals.keys():
@@ -16,8 +16,8 @@ class PolarizedSource(object):
         self.name = ""
         self.spix_dict = {'Perley-Butler 2013' : 'PerleyButler2013Coeffs', 'Perley-Butler 2017' : 'PerleyButler2017Coeffs', 'Scaife-Heald 2012' : 'ScaifeHeald2012Coeffs'}
         switcher = {"3c48" : "p3c48", "3c48_2019": "p3c48_2019", "3c138" : "p3c138", "3c138_2019" : "p3c138_2019", "3c286": "p3c286", "3c286_2019": "p3c286_2019", "3c147" : "p3c147", "3c147_2019": "p3c147_2019"}
-        if self.knownSource != "":
-            method = getattr(self, switcher.get(self.knownSource, "init_empty"))
+        if self.source != "":
+            method = getattr(self, switcher.get(self.source, "init_empty"))
             method()
 
         # convert frequencies to Hz
@@ -85,7 +85,7 @@ class PolarizedSource(object):
         self.nu = np.array([])
         self.polangle = np.array([])
         self.polfrac = np.array([])
-        self.name = self.knownSource
+        self.name = self.source
 
     def getName(self):
         return self.name
