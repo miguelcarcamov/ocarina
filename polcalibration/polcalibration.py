@@ -146,12 +146,12 @@ class PolCalibration(object):
         if(self.old_VLA):
             spw = ''
             spwmap = []
-            interpmode='nearest'
+            interp='nearest'
         else:
             spw = str(firstspw)+'~'+str(lastspw)
             spwmap0 = [0] * self.nspw
             spwmap=[spwmap0, []]
-        interp = [interpmode] * len(gaintable)
+            interp = [interpmode] * len(gaintable)
         self.logger.info("Spw: ", spw)
         polcal(vis=self.vis, caltable=caltable, field=self.leakagefield, spw=spw, refant=self.refant, poltype=poltype, solint=solint, spwmap=spwmap, combine='scan', interp=interp, minsnr=minsnr, gaintable=gaintable, gainfield=gainfield)
 
@@ -187,12 +187,12 @@ class PolCalibration(object):
         if(self.old_VLA):
             spw = ''
             spwmap = []
-            interpmode = 'nearest'
+            interp = 'nearest'
         else:
             spw = str(firstspw)+'~'+str(lastspw)
             spwmap0 = [0] * self.nspw
             spwmap=[spwmap0, []]
-        interp = [interpmode] * len(gaintable)
+            interp = [interpmode] * len(gaintable)
         self.logger.info("Spw: ", spw)
         polcal(vis=self.vis, caltable=caltable, field=self.polanglefield, spw=spw, refant=self.refant, poltype=poltype, solint=solint, combine='scan', spwmap=spwmap, interp=interp, minsnr=minsnr, gaintable=gaintable, gainfield=gainfield)
 
@@ -245,7 +245,7 @@ class PolCalibration(object):
         firstspw=self.spw_ids[0]
         lastspw=self.spw_ids[-1]
         if(self.old_VLA):
-            interp = ''
+            interp = 'nearest'
             spwmap = []
             spw = ''
             calwt = [False]
