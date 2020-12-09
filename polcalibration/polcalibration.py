@@ -49,6 +49,18 @@ class PolCalibration(object):
         print("Min freq: ", self.nu_min)
         print("Max freq: ", self.nu_max)
 
+    def getNu_0(self):
+        return self.nu_0
+
+    def getNu_min(self):
+        return self.nu_min
+
+    def getNu_max(self):
+        return self.nu_max
+
+    def getSpwIds(self):
+        return self.spw_ids
+
     def setModelFluxScale(self, pol_source_object=None, field="", gaintable="", referencefield="", transferfield="", usescratch=False):
         fluxtable = self.vis[:-3]+".F0"
         if os.path.exists(fluxtable): rmtables(fluxtable)
@@ -76,7 +88,7 @@ class PolCalibration(object):
         # get spectral idx coeffs from VLA tables
         pol_source_object.getCoeffs(standard=standard, epoch=epoch)
         intensity, spec_idx = pol_source_object.getSourceInformation(nu_0=self.nu_0)
-        pol_angle_coeffs, pol_frac_coeffs = getSourcePolInformation(nu_0=self.nu_0, nterms=nterms_frac, nu_min=self.nu_min, nu_max=self.nu_max)
+        pol_angle_coeffs, pol_frac_coeffs = getSourcePolInformation(nu_0=self.nu_0, nterms_angle=nterms_angle, nterms_frac=nterms_frac, nu_min=self.nu_min, nu_max=self.nu_max)
         # get intensity in reference frequency
         self.logger.info("Setting model of: "+pol_source_object.getName())
         self.logger.info("Field: "+ field)
