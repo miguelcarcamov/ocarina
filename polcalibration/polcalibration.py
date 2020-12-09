@@ -232,8 +232,10 @@ class PolCalibration(object):
         if(gainfield == []): gainfield = ['']
         applycal(vis=self.vis, field='', spw=spw, gaintable=gaintable, spwmap=[spwmap0], calwt=calwt, applymode=applymode, interp=interp, gainfield=gainfield, antenna='*&*', parang=True, flagbackup=True)
 
+    def applySingleSolution(self, field='', spw='', gaintable=[], gainfield=[], selectdata=True, spwmap=[], calwt=[False], applymode="calflagstrict", interp='linear', antenna='', flagbackup=True):
+        applycal(vis=self.vis, field='', spw=spw, gaintable=gaintable, gainfield=gainfield, selectdata=selectdata, spwmap=spwmap, calwt=calwt, applymode=applymode, interp=interp, antenna=antenna, parang=True, flagbackup=flagbackup)
 
-    def applySolutions(self, gaintable=[], gainfield=[], applymode="calflagstrict", antenna='*&*'):
+    def applySolutions(self, gaintable=[], gainfield=[], applymode="calflagstrict", antenna='*&*', flagbackup=True):
         #leakagegain.append(fluxtable)
         if(gaintable == []):
             if(self.kcrosstable == ""):
@@ -260,7 +262,7 @@ class PolCalibration(object):
             selectdata=True
         self.logger.info("Spw: "+ spw)
         if(gainfield == []): gainfield = [''] * len(gaintable)
-        applycal(vis=self.vis, field='', spw=spw, gaintable=gaintable, selectdata=selectdata, spwmap=spwmap, calwt=calwt, applymode=applymode, interp=interp, gainfield=gainfield, antenna=antenna, parang=True, flagbackup=True)
+        applycal(vis=self.vis, field='', spw=spw, gaintable=gaintable, selectdata=selectdata, spwmap=spwmap, calwt=calwt, applymode=applymode, interp=interp, gainfield=gainfield, antenna=antenna, parang=True, flagbackup=flagbackup)
 
     def finalPlots(self):
         plotms(vis=self.vis, field=self.polanglefield, correlation='',
