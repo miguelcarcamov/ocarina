@@ -69,7 +69,7 @@ class PolCalibration(object):
         print(fluxdict)
         coeffs = fluxdict['2']['spidx'].tolist()
         pol_source_object.setCoeffs(coeffs)
-        intensity, spec_idx = pol_source_object.getSourceInformation(nu_0=self.nu_0, standard=standard, epoch=epoch)
+        intensity, spec_idx = pol_source_object.getUnknownSourceInformation(nu_0=self.nu_0, standard=standard, epoch=epoch)
         self.logger.info("Setting model of: "+pol_source_object.getName())
         self.logger.info("Field: "+ field)
         self.logger.info("Reference freq (GHz): "+ str(self.nu_0/1e9))
@@ -86,7 +86,7 @@ class PolCalibration(object):
     def setKnownModel(self, pol_source_object = None, standard="Perley-Butler 2017", field="", epoch="2017", nterms_angle=3, nterms_frac=3, usescratch=False):
 
         # get spectral idx coeffs from VLA tables
-        intensity, spec_idx = pol_source_object.getSourceInformation(nu_0=self.nu_0, standard=standard, epoch=epoch)
+        intensity, spec_idx = pol_source_object.getKnownSourceInformation(nu_0=self.nu_0, standard=standard, epoch=epoch)
         pol_angle_coeffs, pol_frac_coeffs = pol_source_object.getSourcePolInformation(nu_0=self.nu_0, nterms_angle=nterms_angle, nterms_frac=nterms_frac, nu_min=self.nu_min, nu_max=self.nu_max)
         # get intensity in reference frequency
         self.logger.info("Setting model of: "+pol_source_object.getName())
