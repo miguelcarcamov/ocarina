@@ -21,7 +21,6 @@ class PolCalibration(object):
         for a_attribute in initlocals.keys():
             setattr(self, a_attribute, initlocals[a_attribute])
         self.__dict__.update(kwargs)
-        self.nspw = len(spw_ids)
         self.kcrosstable=''
         self.leakagetable=''
         self.polangletable=''
@@ -44,7 +43,8 @@ class PolCalibration(object):
         if(len(spw_ids)==0):
             spw_table = queryTable(table=self.vis, query="SELECT REF_FREQUENCY FROM "+self.vis+"/SPECTRAL_WINDOW"+" WHERE !FLAG_ROW")
             self.spw_ids = spw_table.rownumbers()
-
+            
+        self.nspw = len(spw_ids)
         print("Ref freq: ", self.nu_0)
         print("Min freq: ", self.nu_min)
         print("Max freq: ", self.nu_max)
