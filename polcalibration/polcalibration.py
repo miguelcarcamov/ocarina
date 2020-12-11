@@ -143,16 +143,18 @@ class PolCalibration(object):
         if os.path.exists(caltable): rmtables(caltable)
         firstspw=self.spw_ids[0]
         lastspw=self.spw_ids[-1]
+
+        spw = str(firstspw)+'~'+str(lastspw)
+        spwmap0 = [0] * self.nspw
+        spwmap=[spwmap0, []]
+        interp = [interpmode] * len(gaintable)
         if(self.old_VLA):
             spw = ''
             spwmap = []
             interp='nearest'
-        else:
-            spw = str(firstspw)+'~'+str(lastspw)
-            spwmap0 = [0] * self.nspw
-            spwmap=[spwmap0, []]
-            interp = [interpmode] * len(gaintable)
+
         self.logger.info("Spw: ", spw)
+        print("Spwmap: ", spwmap)
         polcal(vis=self.vis, caltable=caltable, field=self.leakagefield, spw=spw, refant=self.refant, poltype=poltype, solint=solint, spwmap=spwmap, combine='scan', interp=interp, minsnr=minsnr, gaintable=gaintable, gainfield=gainfield)
 
         if not os.path.exists(caltable): sys.exit("Caltable was not created and cannot continue. Exiting...")
@@ -184,16 +186,18 @@ class PolCalibration(object):
         if os.path.exists(caltable): rmtables(caltable)
         firstspw=self.spw_ids[0]
         lastspw=self.spw_ids[-1]
+
+        spw = str(firstspw)+'~'+str(lastspw)
+        spwmap0 = [0] * self.nspw
+        spwmap=[spwmap0, []]
+        interp = [interpmode] * len(gaintable)
         if(self.old_VLA):
             spw = ''
             spwmap = []
             interp = 'nearest'
-        else:
-            spw = str(firstspw)+'~'+str(lastspw)
-            spwmap0 = [0] * self.nspw
-            spwmap=[spwmap0, []]
-            interp = [interpmode] * len(gaintable)
+
         self.logger.info("Spw: ", spw)
+        print("Spwmap: ", spwmap)
         polcal(vis=self.vis, caltable=caltable, field=self.polanglefield, spw=spw, refant=self.refant, poltype=poltype, solint=solint, combine='scan', spwmap=spwmap, interp=interp, minsnr=minsnr, gaintable=gaintable, gainfield=gainfield)
 
         if not os.path.exists(caltable): sys.exit("Caltable was not created and cannot continue. Exiting...")
@@ -246,6 +250,13 @@ class PolCalibration(object):
         print("Gain tables: ", gaintable)
         firstspw=self.spw_ids[0]
         lastspw=self.spw_ids[-1]
+
+        interp = [''] * len(gaintable)
+        spw = str(firstspw)+'~'+str(lastspw)
+        spwmap0 = [0] * self.nspw
+        spwmap = [spwmap0, [], []]
+        calwt = [False] * len(gaintable)
+        selectdata=True
         if(self.old_VLA):
             interp = 'nearest'
             spwmap = []
@@ -253,13 +264,7 @@ class PolCalibration(object):
             calwt = [False]
             selectdata=False
             antenna=''
-        else:
-            interp = [''] * len(gaintable)
-            spw = str(firstspw)+'~'+str(lastspw)
-            spwmap0 = [0] * self.nspw
-            spwmap = [spwmap0, [], []]
-            calwt = [False] * len(gaintable)
-            selectdata=True
+
         self.logger.info("Spw: "+ spw)
         print("Spwmap: ", spwmap)
         if(gainfield == []): gainfield = [''] * len(gaintable)
