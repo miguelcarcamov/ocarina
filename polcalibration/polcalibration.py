@@ -261,6 +261,7 @@ class PolCalibration(object):
             calwt = [False] * len(gaintable)
             selectdata=True
         self.logger.info("Spw: "+ spw)
+        print("Spwmap: ", spwmap)
         if(gainfield == []): gainfield = [''] * len(gaintable)
         applycal(vis=self.vis, field='', spw=spw, gaintable=gaintable, selectdata=selectdata, spwmap=spwmap, calwt=calwt, applymode=applymode, interp=interp, gainfield=gainfield, antenna=antenna, parang=True, flagbackup=flagbackup)
 
