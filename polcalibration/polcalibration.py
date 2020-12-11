@@ -44,7 +44,7 @@ class PolCalibration(object):
             spw_table = queryTable(table=self.vis, query="SELECT REF_FREQUENCY FROM "+self.vis+"/SPECTRAL_WINDOW"+" WHERE !FLAG_ROW")
             self.spw_ids = spw_table.rownumbers()
 
-        self.nspw = len(spw_ids)
+        self.nspw = len(self.spw_ids)
         print("nspw: ", self.nspw)
         print("Ref freq: ", self.nu_0)
         print("Min freq: ", self.nu_min)
