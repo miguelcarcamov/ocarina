@@ -40,7 +40,7 @@ class PolCalibration(object):
             max_freq = queryTable(table=self.vis, query="SELECT GMAX(CHAN_FREQ) AS FREQ_MAX FROM "+self.vis+"/SPECTRAL_WINDOW"+" WHERE !FLAG_ROW")
             self.nu_max = max_freq.getcol("FREQ_MAX")[0]
 
-        if(len(spw_ids)==0):
+        if(len(self.spw_ids)==0):
             spw_table = queryTable(table=self.vis, query="SELECT REF_FREQUENCY FROM "+self.vis+"/SPECTRAL_WINDOW"+" WHERE !FLAG_ROW")
             self.spw_ids = spw_table.rownumbers()
 
