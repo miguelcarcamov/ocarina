@@ -48,10 +48,10 @@ class PolCalibration(object):
             self.spw_ids = spw_table.rownumbers()
 
         self.nspw = len(self.spw_ids)
-        print("nspw: ", self.nspw)
-        print("Ref freq: ", self.nu_0)
-        print("Min freq: ", self.nu_min)
-        print("Max freq: ", self.nu_max)
+        casalog.post("nspw: "+ str(self.nspw))
+        casalog.post("Ref freq: ", str(self.nu_0))
+        casalog.post("Min freq: ", str(self.nu_min))
+        casalog.post("Max freq: ", str(self.nu_max))
 
     def getNu_0(self):
         return self.nu_0
@@ -72,6 +72,7 @@ class PolCalibration(object):
         fluxdict = fluxscale(vis=self.vis, fluxtable=fluxtable, caltable=gaintable, reference=referencefield, transfer=transferfield, fitorder=4)
         print(fluxdict)
         coeffs = fluxdict['2']['spidx'].tolist()
+        print(coeffs)
         pol_source_object.setCoeffs(coeffs)
         intensity, spec_idx = pol_source_object.getUnknownSourceInformation(nu_0=self.nu_0, standard=standard, epoch=epoch)
         self.logger.info("Setting model of: "+pol_source_object.getName())
@@ -158,8 +159,14 @@ class PolCalibration(object):
         self.logger.info("Leakage calibration")
         self.logger.info("Vis: "+ self.vis)
         self.logger.info("Field: "+ self.leakagefield)
+
+        casalog.post("Leakage calibration", "INFO")
+        casalog.post("Vis: "+ self.vis, "INFO")
+        casalog.post("Field: "+ self.leakagefield, "INFO")
+
         print("Gain tables: ", gaintable)
         self.logger.info("Refant: "+ self.refant)
+        casalog.post("Refant: "+ self.refant, "INFO")
         caltable = self.vis[:-3]+".D0"
         if(gainfield == []): gainfield=[''] * len(gaintable)
         if os.path.exists(caltable): rmtables(caltable)
