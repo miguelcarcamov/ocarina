@@ -24,8 +24,11 @@ class PolCalibration(object):
         self.kcrosstable=''
         self.leakagetable=''
         self.polangletable=''
+
         self.logger = logging.getLogger(self.__class__.__name__)
+        casalog.origin(self.__class__.__name__)
         self.logger.info("Creating "+self.__class__.__name__)
+        casalog.post("Creating "+self.__class__.__name__, "INFO")
 
         if(self.nu_0 == None):
             spw_table = queryTable(table=self.vis, query="SELECT REF_FREQUENCY FROM "+self.vis+"/SPECTRAL_WINDOW"+" WHERE !FLAG_ROW")
@@ -75,6 +78,12 @@ class PolCalibration(object):
         self.logger.info("Field: "+ field)
         self.logger.info("Reference freq (GHz): "+ str(self.nu_0/1e9))
         self.logger.info("I = "+ str(intensity))
+
+        casalog.post("Setting model of: "+pol_source_object.getName(), "INFO")
+        casalog.post("Field: "+ field, "INFO")
+        casalog.post("Reference freq (GHz): "+ str(self.nu_0/1e9), "INFO")
+        casalog.post("I = "+ str(intensity), "INFO")
+
         print("Alpha & Beta: ", spec_idx)
         source_dict = setjy(vis=self.vis, field=field, standard='manual', spw='', fluxdensity=[intensity,0,0,0], spix=spec_idx, reffreq=str(self.nu_0/1e9)+"GHz", interpolation="nearest", scalebychan=True, usescratch=usescratch)
         print(source_dict)
@@ -94,6 +103,12 @@ class PolCalibration(object):
         self.logger.info("Field: "+ field)
         self.logger.info("Reference freq (GHz): "+ str(self.nu_0/1e9))
         self.logger.info("I = "+ str(intensity))
+
+        casalog.post("Setting model of: "+pol_source_object.getName(), "INFO")
+        casalog.post("Field: "+ field, "INFO")
+        casalog.post("Reference freq (GHz): "+ str(self.nu_0/1e9), "INFO")
+        casalog.post("I = "+ str(intensity), "INFO")
+
         print("Alpha & Beta: ", spec_idx)
         print("Pol fraction coeffs: ", pol_frac_coeffs)
         print("Pol angle coeffs: ", pol_angle_coeffs)
@@ -110,6 +125,11 @@ class PolCalibration(object):
         self.logger.info("Vis: "+ self.vis)
         self.logger.info("Field: "+ self.polanglefield)
         self.logger.info("Refant: "+ self.refant)
+
+        casalog.post("Solving Cross-hand Delays", "INFO")
+        casalog.post("Vis: "+ self.vis, "INFO")
+        casalog.post("Field: "+ self.polanglefield, "INFO")
+        casalog.post("Refant: "+ self.refant, "INFO")
         caltable = self.vis[:-3]+".Kcross"
         if os.path.exists(caltable): rmtables(caltable)
         firstspw=self.spw_ids[0]
@@ -121,6 +141,7 @@ class PolCalibration(object):
             spw =str(firstspw)+'~'+str(lastspw)+':'+channels
 
         self.logger.info("Spw: " + spw)
+        casalog.post("Spw: " + spw, "INFO")
         gaincal(vis=self.vis, caltable=caltable, field=self.polanglefield, spw=spw, refant=self.kcross_refant, refantmode=refantmode, gaintype="KCROSS", solint=solint, combine=combine, calmode="ap", append=False, gaintable=[''], gainfield=[''], interp=[''], spwmap=[[]], parang=True)
         if not os.path.exists(caltable): sys.exit("Caltable was not created and cannot continue. Exiting...")
         plotcal(caltable=caltable, xaxis='freq', yaxis='delay', antenna=self.refant, showgui=False, figfile=self.vis[:-3]+'.freqvsdelayKcross.png')
@@ -155,6 +176,7 @@ class PolCalibration(object):
             interp='nearest'
 
         self.logger.info("Spw: ", spw)
+        casalog.post("Spw: ", spw, "INFO")
         print("Spwmap: ", spwmap)
         polcal(vis=self.vis, caltable=caltable, field=self.leakagefield, spw=spw, refant=self.refant, poltype=poltype, solint=solint, spwmap=spwmap, combine='scan', interp=interp, minsnr=minsnr, gaintable=gaintable, gainfield=gainfield)
 
@@ -180,8 +202,16 @@ class PolCalibration(object):
         self.logger.info("Polarization angle calibration")
         self.logger.info("Vis: "+ self.vis)
         self.logger.info("Field: "+ self.polanglefield)
+
+        casalog.post("Polarization angle calibration", "INFO")
+        casalog.post("Vis: "+ self.vis, "INFO")
+        casalog.post("Field: "+ self.polanglefield, "INFO")
+
         print("Gain tables: ", gaintable)
+
         self.logger.info("Refant: "+ self.refant)
+        casalog.post("Refant: "+ self.refant, "INFO")
+
         caltable = self.vis[:-3]+".X0"
         if(gainfield == []): gainfield=[''] * len(gaintable)
         if os.path.exists(caltable): rmtables(caltable)
@@ -198,6 +228,7 @@ class PolCalibration(object):
             interp = 'nearest'
 
         self.logger.info("Spw: ", spw)
+        casalog.post("Spw: ", spw, "INFO")
         print("Spwmap: ", spwmap)
         polcal(vis=self.vis, caltable=caltable, field=self.polanglefield, spw=spw, refant=self.refant, poltype=poltype, solint=solint, combine='scan', spwmap=spwmap, interp=interp, minsnr=minsnr, gaintable=gaintable, gainfield=gainfield)
 
@@ -219,6 +250,7 @@ class PolCalibration(object):
         lastspw=self.spw_ids[-1]
         spw = str(firstspw)+'~'+str(lastspw)
         self.logger.info("Spw: "+ spw)
+        casalog.post("Spw: "+ spw, "INFO")
         spwmap0 = [0] * self.nspw
         interp = [''] * len(gaintable)
         calwt = [False] * len(gaintable)
@@ -231,6 +263,7 @@ class PolCalibration(object):
         lastspw=self.spw_ids[-1]
         spw = str(firstspw)+'~'+str(lastspw)
         self.logger.info("Spw: "+ spw)
+        casalog.post("Spw: "+ spw, "INFO")
         spwmap0 = [0] * self.nspw
         interp = [''] * len(gaintable)
         calwt = [False] * len(gaintable)
@@ -248,6 +281,7 @@ class PolCalibration(object):
             else:
                 gaintable=[self.kcrosstable, self.leakagetable, self.polangletable]
         self.logger.info("Applying solutions")
+        casalog.post("Applying solutions", "INFO")
         print("Gain tables: ", gaintable)
         firstspw=self.spw_ids[0]
         lastspw=self.spw_ids[-1]
@@ -267,6 +301,7 @@ class PolCalibration(object):
             antenna=''
 
         self.logger.info("Spw: "+ spw)
+        casalog.post("Spw: "+ spw, "INFO")
         print("Spwmap: ", spwmap)
         if(gainfield == []): gainfield = [''] * len(gaintable)
         applycal(vis=self.vis, field='', spw=spw, gaintable=gaintable, selectdata=selectdata, spwmap=spwmap, calwt=calwt, applymode=applymode, interp=interp, gainfield=gainfield, antenna=antenna, parang=True, flagbackup=flagbackup)

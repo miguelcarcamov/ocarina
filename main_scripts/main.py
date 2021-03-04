@@ -51,9 +51,9 @@ if __name__ == '__main__':
     # for cross-hands
     plotms(vis=inputvis, field=fields_str, xaxis='frequency', ydatacolumn='corrected', yaxis='amplitude', correlation='RL,LR', showgui=False, plotfile='afterflagging_crosshands.png', overwrite=True)
     # Initialize polarization calibration object
-    spw_table = queryTable(table=inputvis, query="SELECT REF_FREQUENCY FROM "+inputvis+"/SPECTRAL_WINDOW"+" WHERE !FLAG_ROW")
-    min_freq = queryTable(table=inputvis, query="SELECT GMIN(CHAN_FREQ) AS FREQ_MIN FROM "+inputvis+"/SPECTRAL_WINDOW"+" WHERE !FLAG_ROW")
-    max_freq = queryTable(table=inputvis, query="SELECT GMAX(CHAN_FREQ) AS FREQ_MAX FROM "+inputvis+"/SPECTRAL_WINDOW"+" WHERE !FLAG_ROW")
+    spw_table = queryTable(table=inputvis, query="SELECT REF_FREQUENCY FROM "+inputvis+"/SPECTRAL_WINDOW WHERE !FLAG_ROW")
+    min_freq = queryTable(table=inputvis, query="SELECT GMIN(CHAN_FREQ) AS FREQ_MIN FROM "+inputvis+"/SPECTRAL_WINDOW WHERE !FLAG_ROW")
+    max_freq = queryTable(table=inputvis, query="SELECT GMAX(CHAN_FREQ) AS FREQ_MAX FROM "+inputvis+"/SPECTRAL_WINDOW WHERE !FLAG_ROW")
 
     spw_ids = spw_table.rownumbers()
     spw_reffreqs = spw_table.getcol("REF_FREQUENCY")
