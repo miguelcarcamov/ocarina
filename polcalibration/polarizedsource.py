@@ -2,7 +2,7 @@ import numpy as np
 import logging
 import os
 from __casac__.table import table as tb
-from __casac__.logsink import logsink as casalog
+from __casac__.logsink import logsink
 from utils import degreesToRadians, radiansToDegrees, queryTable
 from function import Function, FluxFunction, PolFunction
 
@@ -34,9 +34,9 @@ class PolarizedSource(object):
 
         self.logger = logging.getLogger(self.__class__.__name__)
         self.logger.info("Creating "+self.__class__.__name__)
-
-        casalog.origin(self.__class__.__name__)
-        casalog.post("Creating "+self.__class__.__name__, "INFO")
+        self.casalog = logsink()
+        self.casalog.origin(self.__class__.__name__)
+        self.casalog.post("Creating "+self.__class__.__name__, "INFO")
 
     def p3c48(self):
         self.nu = np.array([1.05, 1.45, 1.64, 1.95, 2.45, 2.95, 3.25, 3.75, 4.50, 5.00, 6.50, 7.25, 8.10, 8.80, 12.8, 13.7, 14.6, 15.5, 18.1, 19.0, 22.4, 23.3, 36.5, 43.5])
