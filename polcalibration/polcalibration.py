@@ -13,6 +13,7 @@ from rmtables import rmtables
 from plotms import plotms
 from flagdata import flagdata
 from utils import queryTable
+from __casac__.logsink import logsink as casalog
 
 class PolCalibration(object):
     def __init__(self, vis="", spw_ids=np.array([]), polanglefield="", leakagefield="", target="", refant="", kcross_refant="", nu_0=None, nu_min=None, nu_max=None, old_VLA=False, level=logging.INFO, **kwargs):

@@ -2,6 +2,7 @@ import numpy as np
 import logging
 import os
 from __casac__.table import table as tb
+from __casac__.logsink import logsink as casalog
 from utils import degreesToRadians, radiansToDegrees, queryTable
 from function import Function, FluxFunction, PolFunction
 
@@ -32,8 +33,9 @@ class PolarizedSource(object):
         self.spidx_coeffs = []
 
         self.logger = logging.getLogger(self.__class__.__name__)
-        casalog.origin(self.__class__.__name__)
         self.logger.info("Creating "+self.__class__.__name__)
+
+        casalog.origin(self.__class__.__name__)
         casalog.post("Creating "+self.__class__.__name__, "INFO")
 
     def p3c48(self):

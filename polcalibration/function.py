@@ -1,6 +1,7 @@
 import numpy as np
 import logging
 from scipy.optimize import curve_fit
+from __casac__.logsink import logsink as casalog
 import abc
 
 class Function(object):
