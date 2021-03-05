@@ -66,11 +66,11 @@ class PolCalibration(object):
     def getSpwIds(self):
         return self.spw_ids
 
-    def setUnknownModel(self, pol_source_object=None, field="", gaintable="", referencefield="", transferfield="", standard="Perley-Butler 2017", epoch="2017", usescratch=False):
+    def setUnknownModel(self, pol_source_object=None, field="", gaintable="", referencefield="", transferfield="", standard="Perley-Butler 2017", epoch="2017", fitorder=2, usescratch=False):
         fluxtable = self.vis[:-3]+".F0"
         if os.path.exists(fluxtable): rmtables(fluxtable)
         # From fluxscale documentation we know that the returned coefficients come from the log10 Taylor expansion
-        fluxdict = fluxscale(vis=self.vis, fluxtable=fluxtable, caltable=gaintable, reference=referencefield, transfer=transferfield, fitorder=4)
+        fluxdict = fluxscale(vis=self.vis, fluxtable=fluxtable, caltable=gaintable, reference=referencefield, transfer=transferfield, fitorder=fitorder)
         print(fluxdict)
         coeffs = fluxdict['2']['spidx'].tolist()
         print(coeffs)
