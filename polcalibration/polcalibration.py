@@ -146,7 +146,7 @@ class PolCalibration(object):
         self.casalog.post("Spw: " + spw, "INFO")
         gaincal(vis=self.vis, caltable=caltable, field=self.polanglefield, spw=spw, refant=self.kcross_refant, refantmode=refantmode, gaintype="KCROSS", solint=solint, combine=combine, calmode="ap", append=False, gaintable=[''], gainfield=[''], interp=[''], spwmap=[[]], parang=True)
         if not os.path.exists(caltable): sys.exit("Caltable was not created and cannot continue. Exiting...")
-        plotcal(caltable=caltable, xaxis='freq', yaxis='delay', antenna=self.refant, showgui=False, figfile=self.vis[:-3]+'.freqvsdelayKcross.png')
+        plotcal(caltable=caltable, xaxis='freq', yaxis='delay', antenna=self.kcross_refant, showgui=False, figfile=self.vis[:-3]+'.freqvsdelayKcross.png')
         self.kcrosstable = caltable
         return caltable
 
