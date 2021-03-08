@@ -49,10 +49,10 @@ class PolCalibration(object):
             self.spw_ids = spw_table.rownumbers()
 
         self.nspw = len(self.spw_ids)
-        self.casalog.post("nspw: "+ str(self.nspw))
-        self.casalog.post("Ref freq: ", str(self.nu_0))
-        self.casalog.post("Min freq: ", str(self.nu_min))
-        self.casalog.post("Max freq: ", str(self.nu_max))
+        self.casalog.post("nspw: "+ str(self.nspw), "INFO")
+        self.casalog.post("Ref freq: "+ str(self.nu_0), "INFO")
+        self.casalog.post("Min freq: "+ str(self.nu_min), "INFO")
+        self.casalog.post("Max freq: "+ str(self.nu_max), "INFO")
 
     def getNu_0(self):
         return self.nu_0
