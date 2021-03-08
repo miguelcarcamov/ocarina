@@ -146,7 +146,7 @@ class PolCalibration(object):
         self.casalog.post("Spw: " + spw, "INFO")
         gaincal(vis=self.vis, caltable=caltable, field=self.polanglefield, spw=spw, refant=self.kcross_refant, refantmode=refantmode, gaintype="KCROSS", solint=solint, combine=combine, calmode="ap", append=False, gaintable=[''], gainfield=[''], interp=[''], spwmap=[[]], parang=True)
         if not os.path.exists(caltable): sys.exit("Caltable was not created and cannot continue. Exiting...")
-        plotcal(caltable=caltable, xaxis='freq', yaxis='delay', antenna=self.kcross_refant, showgui=False, figfile=self.vis[:-3]+'.freqvsdelayKcross.png')
+        plotms(vis=caltable, xaxis='frequency', yaxis='delay', antenna=self.kcross_refant, coloraxis='corr', showgui=False, plotfile=self.vis[:-3]+'.freqvsdelayKcross.png', overwrite=True)
         self.kcrosstable = caltable
         return caltable
 
@@ -190,14 +190,20 @@ class PolCalibration(object):
 
         if not os.path.exists(caltable): sys.exit("Caltable was not created and cannot continue. Exiting...")
 
+        plotms(vis=caltable,xaxis='freq',yaxis='amp',
+       iteraxis='antenna',coloraxis='corr', showgui=False, plotfile=self.vis[:-3]+'.D0.ampvsfreq.png', overwrite=True)
+
+        plotms(vis=caltable,xaxis='chan',yaxis='phase',
+               iteraxis='antenna',coloraxis='corr',plotrange=[-1,-1,-180,180], showgui=False, plotfile=self.vis[:-3]+'.D0.phasevschan.png', overwrite=True)
+
+        plotms(vis=caltable,xaxis='chan',yaxis='phase',
+               iteraxis='antenna',coloraxis='corr',plotrange=[-1,-1,-180,180], showgui=False, plotfile=self.vis[:-3]+'.D0.ampvsantenna.png', overwrite=True)
+
+        plotms(vis=caltable,xaxis='antenna1',yaxis='amp',coloraxis='corr', showgui=False, plotfile=self.vis[:-3]+'.D0.ampvsantenna1.png', overwrite=True)
+
         if(flagclip):
             flagdata(vis=caltable, mode='clip', correlation='ABS_ALL', clipminmax=[clipmin, clipmax], datacolumn='CPARAM', clipoutside=True, action='apply', flagbackup=False, savepars=False)
 
-        plotcal(caltable=caltable,xaxis='freq',yaxis='amp', iteration='antenna', showgui=False, figfile=self.vis[:-3]+'.D0.ampvsfreq.png')
-
-        plotcal(caltable=caltable,xaxis='chan',yaxis='phase', iteration='antenna',plotrange=[-1,-1,-180,180], showgui=False, figfile=self.vis[:-3]+'.D0.phasevschan.png')
-
-        plotcal(caltable=caltable,xaxis='antenna',yaxis='amp', showgui=False, figfile=self.vis[:-3]+'.D0.ampvsantenna.png')
         self.leakagetable = caltable
         return caltable
 
@@ -241,8 +247,8 @@ class PolCalibration(object):
         polcal(vis=self.vis, caltable=caltable, field=self.polanglefield, spw=spw, refant=self.refant, poltype=poltype, solint=solint, combine='scan', spwmap=spwmap, interp=interp, minsnr=minsnr, gaintable=gaintable, gainfield=gainfield)
 
         if not os.path.exists(caltable): sys.exit("Caltable was not created and cannot continue. Exiting...")
+        plotms(vis=caltable,xaxis='frequency',yaxis='phase',coloraxis='spw', showgui=False, figfile=self.vis[:-3]+'.X0.phasevsfreq.png', overwrite=True)
 
-        plotcal(caltable=caltable, xaxis='freq', yaxis='phase', showgui=False, figfile=self.vis[:-3]+'.X0.phasevsfreq.png')
         self.polangletable = caltable
         return caltable
 
