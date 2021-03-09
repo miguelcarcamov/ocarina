@@ -121,7 +121,7 @@ class PolCalibration(object):
         plotms(vis=self.vis, field=field, correlation='RL', timerange='', antenna=self.refant, xaxis='frequency', yaxis='phase', ydatacolumn='model', showgui=False, plotfile=field+'_RLphase_model.png', overwrite=True)
 
 
-    def solveCrossHandDelays(self, solint='inf', combine='scan,spw', channels="", refantmode="flex"):
+    def solveCrossHandDelays(self, minsnr=3.0, solint='inf', combine='scan,spw', channels="", refantmode="flex"):
         self.logger.info("Solving Cross-hand Delays")
         self.logger.info("Vis: "+ self.vis)
         self.logger.info("Field: "+ self.polanglefield)
@@ -143,7 +143,7 @@ class PolCalibration(object):
 
         self.logger.info("Spw: " + spw)
         self.casalog.post("Spw: " + spw, "INFO")
-        gaincal(vis=self.vis, caltable=caltable, field=self.polanglefield, spw=spw, refant=self.kcross_refant, refantmode=refantmode, gaintype="KCROSS", solint=solint, combine=combine, calmode="ap", append=False, gaintable=[''], gainfield=[''], interp=[''], spwmap=[[]], parang=True)
+        gaincal(vis=self.vis, caltable=caltable, field=self.polanglefield, spw=spw, refant=self.kcross_refant, refantmode=refantmode, minsnr=minsnr, gaintype="KCROSS", solint=solint, combine=combine, calmode="ap", append=False, gaintable=[''], gainfield=[''], interp=[''], spwmap=[[]], parang=True)
         if not os.path.exists(caltable): sys.exit("Caltable was not created and cannot continue. Exiting...")
         plotms(vis=caltable, xaxis='frequency', yaxis='delay', antenna=self.kcross_refant, coloraxis='corr', showgui=False, plotfile=self.vis[:-3]+'.freqvsdelayKcross.png', overwrite=True)
         self.kcrosstable = caltable
