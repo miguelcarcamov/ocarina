@@ -145,6 +145,22 @@ class PolarizedSource(object):
 
         return 10.0**flux_at_nu
 
+    def fluxscale_scalar(self, nu, nu_0):
+        flux_at_nu = 0.0
+
+        for i in range(len(self.spidx_coeffs)):
+            flux_at_nu += self.spidx_coeffs[i] * (np.log(nu/nu_0)**i)
+
+        return np.exp(flux_at_nu)
+
+    def fluxscale_flux(self, nu, nu_0):
+        flux_at_nu = np.zeros(len(nu))
+
+        for i in range(len(self.spidx_coeffs)):
+            flux_at_nu += self.spidx_coeffs[i] * (np.log(nu/nu_0)**i)
+
+        return np.exp(flux_at_nu)
+
     def getCoeffs(self, standard="Perley-Butler 2017", epoch="2017"):
         coeff_table = os.getenv('CASAPATH').split(' ')[0] + '/data/nrao/VLA/standards/' + self.spix_dict[standard]
         tb_obj = tb()
@@ -163,6 +179,17 @@ class PolarizedSource(object):
             nu_0 = np.median(nu)
         flux_0 = self.flux_scalar(nu_0/1e9)
         fluxes = self.flux(nu/1e9)
+
+        i_coeffs = np.random.rand(2)
+        source_func_frac = FluxFunction(flux_0=flux_0, xdata=nu, x_0=nu_0)
+        source_func_frac.fit(nu, fluxes, i_coeffs)
+        return source_func_frac.getCoeffs().tolist()
+
+    def fit_fluxscale_AlphaBeta(self, nu, nu_0=0.0):
+        if(not nu_0):
+            nu_0 = np.median(nu)
+        flux_0 = self.fluxscale_scalar(nu_0/1e9, nu_0/1e9)
+        fluxes = self.fluxscale_flux(nu/1e9, nu_0/1e9)
 
         i_coeffs = np.random.rand(2)
         source_func_frac = FluxFunction(flux_0=flux_0, xdata=nu, x_0=nu_0)
@@ -197,8 +224,8 @@ class PolarizedSource(object):
 
     def getUnknownSourceInformation(self, nu_0=0.0, standard="Perley-Butler 2017", epoch="2017"):
         nu_fit = np.linspace(0.3275*1e9, 50.0*1e9, 40)
-        spec_idx = self.fitAlphaBeta(nu_fit, nu_0=nu_0)
-        intensity = self.flux_scalar(nu_0/1e9)
+        spec_idx = self.fit_fluxscale_AlphaBeta(nu_fit, nu_0=nu_0)
+        intensity = self.fluxscale_scalar(nu_0/1e9, nu_0/1e9)
         return intensity, spec_idx
 
     def getSourcePolInformation(self, nu_0=0.0, nterms_angle=3, nterms_frac=3, nu_min=0.0, nu_max=np.inf):
