@@ -253,7 +253,7 @@ class PolCalibration(object):
 
     def plotLeakage(self, plotdir=""):
         plotms(vis=self.leakagetable, xaxis='antenna', yaxis='amp', plotfile=plotdir+self.vis[:-3]+'.D0.amp.png', showgui=False, overwrite=True)
-        plotms(vis=self.leakagetable, xaxis='antenna', yaxis='phase', iteration='antenna', plotfile=plotdir+self.vis[:-3]+'.D0.phs.png', showgui=False, overwrite=True)
+        plotms(vis=self.leakagetable, xaxis='antenna', yaxis='phase', iteraxis='antenna', plotfile=plotdir+self.vis[:-3]+'.D0.phs.png', showgui=False, overwrite=True)
         plotms(vis=self.leakagetable, xaxis='antenna', yaxis='snr', showgui=False, plotfile=plotdir+self.vis[:-3]+'.D0.snr.png', overwrite=True)
         plotms(vis=self.leakagetable, xaxis='real', yaxis='imag', showgui=False, plotfile=plotdir+self.vis[:-3]+'.D0.cmplx.png', overwrite=True)
 
