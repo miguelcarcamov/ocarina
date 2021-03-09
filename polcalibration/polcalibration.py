@@ -247,16 +247,16 @@ class PolCalibration(object):
         polcal(vis=self.vis, caltable=caltable, field=self.polanglefield, spw=spw, refant=self.refant, poltype=poltype, solint=solint, combine='scan', spwmap=spwmap, interp=interp, minsnr=minsnr, gaintable=gaintable, gainfield=gainfield)
 
         if not os.path.exists(caltable): sys.exit("Caltable was not created and cannot continue. Exiting...")
-        plotms(vis=caltable,xaxis='frequency',yaxis='phase',coloraxis='spw', showgui=False, figfile=self.vis[:-3]+'.X0.phasevsfreq.png', overwrite=True)
+        plotms(vis=caltable,xaxis='frequency',yaxis='phase',coloraxis='spw', showgui=False, plotfile=self.vis[:-3]+'.X0.phasevsfreq.png', overwrite=True)
 
         self.polangletable = caltable
         return caltable
 
     def plotLeakage(self, plotdir=""):
-        plotcal(caltable=self.leakagetable, xaxis='antenna', yaxis='amp', figfile=plotdir+self.vis[:-3]+'.D0.amp.png', showgui=False)
-        plotcal(caltable=self.leakagetable, xaxis='antenna', yaxis='phase', iteration='antenna', figfile=plotdir+self.vis[:-3]+'.D0.phs.png', showgui=False)
-        plotcal(caltable=self.leakagetable, xaxis='antenna', yaxis='snr', showgui=False, figfile=plotdir+self.vis[:-3]+'.D0.snr.png')
-        plotcal(caltable=self.leakagetable, xaxis='real', yaxis='imag', showgui=False, figfile=plotdir+self.vis[:-3]+'.D0.cmplx.png')
+        plotcal(caltable=self.leakagetable, xaxis='antenna', yaxis='amp', plotfile=plotdir+self.vis[:-3]+'.D0.amp.png', showgui=False)
+        plotcal(caltable=self.leakagetable, xaxis='antenna', yaxis='phase', iteration='antenna', plotfile=plotdir+self.vis[:-3]+'.D0.phs.png', showgui=False)
+        plotcal(caltable=self.leakagetable, xaxis='antenna', yaxis='snr', showgui=False, plotfile=plotdir+self.vis[:-3]+'.D0.snr.png')
+        plotcal(caltable=self.leakagetable, xaxis='real', yaxis='imag', showgui=False, plotfile=plotdir+self.vis[:-3]+'.D0.cmplx.png')
 
     def applySolutions2(self, gainfield=[], applymode="calflagstrict"):
         gaintable=[self.kcrosstable]
