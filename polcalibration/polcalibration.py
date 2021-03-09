@@ -3,7 +3,6 @@ import sys
 import numpy as np
 import logging
 from applycal import applycal
-from plotcal import plotcal
 from polcal import polcal
 from applycal import applycal
 from gaincal import gaincal
@@ -253,10 +252,10 @@ class PolCalibration(object):
         return caltable
 
     def plotLeakage(self, plotdir=""):
-        plotcal(caltable=self.leakagetable, xaxis='antenna', yaxis='amp', plotfile=plotdir+self.vis[:-3]+'.D0.amp.png', showgui=False)
-        plotcal(caltable=self.leakagetable, xaxis='antenna', yaxis='phase', iteration='antenna', plotfile=plotdir+self.vis[:-3]+'.D0.phs.png', showgui=False)
-        plotcal(caltable=self.leakagetable, xaxis='antenna', yaxis='snr', showgui=False, plotfile=plotdir+self.vis[:-3]+'.D0.snr.png')
-        plotcal(caltable=self.leakagetable, xaxis='real', yaxis='imag', showgui=False, plotfile=plotdir+self.vis[:-3]+'.D0.cmplx.png')
+        plotms(vis=self.leakagetable, xaxis='antenna', yaxis='amp', plotfile=plotdir+self.vis[:-3]+'.D0.amp.png', showgui=False, overwrite=True)
+        plotms(vis=self.leakagetable, xaxis='antenna', yaxis='phase', iteration='antenna', plotfile=plotdir+self.vis[:-3]+'.D0.phs.png', showgui=False, overwrite=True)
+        plotms(vis=self.leakagetable, xaxis='antenna', yaxis='snr', showgui=False, plotfile=plotdir+self.vis[:-3]+'.D0.snr.png', overwrite=True)
+        plotms(vis=self.leakagetable, xaxis='real', yaxis='imag', showgui=False, plotfile=plotdir+self.vis[:-3]+'.D0.cmplx.png', overwrite=True)
 
     def applySolutions2(self, gainfield=[], applymode="calflagstrict"):
         gaintable=[self.kcrosstable]
