@@ -222,7 +222,7 @@ class PolarizedSource(object):
         intensity = self.flux_scalar(nu_0/1e9)
         return intensity, spec_idx
 
-    def getUnknownSourceInformation(self, nu_0=0.0, standard="Perley-Butler 2017", epoch="2017"):
+    def getUnknownSourceInformation(self, nu_0=0.0):
         nu_fit = np.linspace(0.3275*1e9, 50.0*1e9, 40)
         spec_idx = self.fit_fluxscale_AlphaBeta(nu_fit, nu_0=nu_0)
         intensity = self.fluxscale_scalar(nu_0/1e9, nu_0/1e9)

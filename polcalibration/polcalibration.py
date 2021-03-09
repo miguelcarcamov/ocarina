@@ -65,25 +65,30 @@ class PolCalibration(object):
     def getSpwIds(self):
         return self.spw_ids
 
-    def setUnknownModel(self, pol_source_object=None, field="", gaintable="", referencefield="", transferfield="", standard="Perley-Butler 2017", epoch="2017", fitorder=1, usescratch=False):
+    def setUnknownModel(self, pol_source_object=None, field="", gaintable="", referencefield="", transferfield="", fitorder=1, usescratch=False):
         fluxtable = self.vis[:-3]+".F0"
         if os.path.exists(fluxtable): rmtables(fluxtable)
-        # From fluxscale documentation we know that the returned coefficients come from the log10 Taylor expansion
+        # From fluxscale documentation we know that the coefficients are return from the natural log nu/nu_0 Taylor expansion
         fluxdict = fluxscale(vis=self.vis, fluxtable=fluxtable, caltable=gaintable, reference=referencefield, transfer=transferfield, fitorder=fitorder)
         print(fluxdict)
         coeffs = fluxdict['2']['spidx'].tolist()
+        flux_at_nu_0 = fluxdict['2']['fitFluxd']
         print(coeffs)
+        print(flux_at_nu_0)
+
         pol_source_object.setCoeffs(coeffs)
-        intensity, spec_idx = pol_source_object.getUnknownSourceInformation(nu_0=self.nu_0, standard=standard, epoch=epoch)
+        intensity, spec_idx = pol_source_object.getUnknownSourceInformation(nu_0=self.nu_0)
         self.logger.info("Setting model of: "+pol_source_object.getName())
         self.logger.info("Field: "+ field)
         self.logger.info("Reference freq (GHz): "+ str(self.nu_0/1e9))
         self.logger.info("I = "+ str(intensity))
+        self.logger.info("I from fluxscale: "+str(flux_at_nu))
 
         self.casalog.post("Setting model of: "+pol_source_object.getName(), "INFO")
         self.casalog.post("Field: "+ field, "INFO")
         self.casalog.post("Reference freq (GHz): "+ str(self.nu_0/1e9), "INFO")
         self.casalog.post("I = "+ str(intensity), "INFO")
+        self.casalog.info("I from fluxscale: "+str(flux_at_nu), "INFO")
 
         print("Alpha & Beta: ", spec_idx)
         source_dict = setjy(vis=self.vis, field=field, standard='manual', spw='', fluxdensity=[intensity,0,0,0], spix=spec_idx, reffreq=str(self.nu_0/1e9)+"GHz", interpolation="nearest", scalebychan=True, usescratch=usescratch)
