@@ -73,9 +73,9 @@ class PolCalibration(object):
         print(fluxdict)
         coeffs = fluxdict['2']['spidx'].tolist()
         print("Coeffs: ", coeffs)
-        print("Flux at nu_0: ", np.exp(coeffs[0]))
 
         intensity = np.exp(coeffs.pop(0))
+        print("Flux at nu_0: ", intensity)
         pol_source_object.setCoeffs(coeffs)
         spec_idx = coeffs
 
