@@ -72,25 +72,27 @@ class PolCalibration(object):
         fluxdict = fluxscale(vis=self.vis, fluxtable=fluxtable, caltable=gaintable, reference=referencefield, transfer=transferfield, fitorder=fitorder)
         print(fluxdict)
         coeffs = fluxdict['2']['spidx'].tolist()
-        print("Coeffs: ", coeffs)
 
-        intensity = np.exp(coeffs.pop(0))
+        coeffs.pop(0) # This will make coeffs to have only spectral index and spectral curvature
+        print("Coeffs: ", coeffs)
+        intensity = fluxdict['2']['fitFluxd']
         print("Flux at nu_0: ", intensity)
+        ref_freq = fluxdict['2']['fitRefFreq']
         pol_source_object.setCoeffs(coeffs)
         spec_idx = coeffs
 
         self.logger.info("Setting model of: "+pol_source_object.getName())
         self.logger.info("Field: "+ field)
-        self.logger.info("Reference freq (GHz): "+ str(self.nu_0/1e9))
+        self.logger.info("Reference freq (GHz): "+ str(ref_freq/1e9))
         self.logger.info("I(nu_0) = "+str(intensity))
 
         self.casalog.post("Setting model of: "+pol_source_object.getName(), "INFO")
         self.casalog.post("Field: "+ field, "INFO")
-        self.casalog.post("Reference freq (GHz): "+ str(self.nu_0/1e9), "INFO")
+        self.casalog.post("Reference freq (GHz): "+ str(ref_freq/1e9), "INFO")
         self.casalog.post("I(nu_0) = "+ str(intensity), "INFO")
 
         print("Alpha & Beta: ", spec_idx)
-        source_dict = setjy(vis=self.vis, field=field, standard='manual', spw='', fluxdensity=[intensity,0,0,0], spix=spec_idx, reffreq=str(self.nu_0/1e9)+"GHz", interpolation="nearest", scalebychan=True, usescratch=usescratch)
+        source_dict = setjy(vis=self.vis, field=field, standard='manual', spw='', fluxdensity=[intensity,0,0,0], spix=spec_idx, reffreq=str(ref_freq/1e9)+"GHz", interpolation="nearest", scalebychan=True, usescratch=usescratch)
         print(source_dict)
         plotms(vis=self.vis, field=field, correlation='RR', timerange='', antenna=self.refant, xaxis='frequency', yaxis='amp', ydatacolumn='model', showgui=False, plotfile=field+'_RRamp_model.png', overwrite=True)
         plotms(vis=self.vis, field=field, correlation='RL', timerange='', antenna=self.refant, xaxis='frequency', yaxis='amp', ydatacolumn='model', showgui=False, plotfile=field+'_RLamp_model.png', overwrite=True)
