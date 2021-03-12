@@ -15,7 +15,7 @@ from utils import queryTable
 from __casac__.logsink import logsink
 
 class PolCalibration(object):
-    def __init__(self, vis="", spw_ids=np.array([]), polanglefield="", leakagefield="", target="", refant="", kcross_refant="", nu_0=None, nu_min=None, nu_max=None, old_VLA=False, level=logging.INFO, **kwargs):
+    def __init__(self, vis="", spw_ids=np.array([]), antennas="", polanglefield="", leakagefield="", target="", refant="", kcross_refant="", mapped_spw=0, nu_0=None, nu_min=None, nu_max=None, old_VLA=False, level=logging.INFO, **kwargs):
         initlocals = locals()
         initlocals.pop('self')
         for a_attribute in initlocals.keys():
@@ -65,6 +65,18 @@ class PolCalibration(object):
     def getSpwIds(self):
         return self.spw_ids
 
+    def getMappedSpw(self):
+        return self.mapped_spw
+
+    def setMappedSpw(self, mapped_spw=0):
+        self.mapped_spw = mapped_spw
+
+    def getAntennas(self):
+        return self.antennas
+
+    def setAntennas(self, antennas=""):
+        self.antennas = antennas
+
     def setUnknownModel(self, pol_source_object=None, field="", gaintable="", referencefield="", transferfield="", fitorder=1, usescratch=False):
         fluxtable = self.vis[:-3]+".F0"
         if os.path.exists(fluxtable): rmtables(fluxtable)
@@ -75,7 +87,7 @@ class PolCalibration(object):
 
         print("Coeffs: ", coeffs) # a0 log10(S at nu_0), a1 spectral idx, a2 spectral curvature
         pol_source_object.setCoeffs(coeffs)
-        intensity = 10.0**(coeffs.pop(0)) # Pop a0 and make coeffs to have only spectral index and spectral curvature coefficients
+        intensity = 10.0**(coeffs.pop(0)) # Extract a0 and make coeffs to have only spectral index and spectral curvature coefficients
         spec_idx = coeffs
 
         self.logger.info("Setting model of: "+pol_source_object.getName())
@@ -146,7 +158,7 @@ class PolCalibration(object):
 
         self.logger.info("Spw: " + spw)
         self.casalog.post("Spw: " + spw, "INFO")
-        gaincal(vis=self.vis, caltable=caltable, field=self.polanglefield, spw=spw, refant=self.kcross_refant, refantmode=refantmode, minsnr=minsnr, gaintype="KCROSS", solint=solint, combine=combine, calmode="ap", append=False, gaintable=[''], gainfield=[''], interp=[''], spwmap=[[]], parang=True)
+        gaincal(vis=self.vis, caltable=caltable, field=self.polanglefield, spw=spw, refant=self.kcross_refant, refantmode=refantmode, antenna=self.antennas, minsnr=minsnr, gaintype="KCROSS", solint=solint, combine=combine, calmode="ap", append=False, gaintable=[''], gainfield=[''], interp=[''], spwmap=[[]], parang=True)
         if not os.path.exists(caltable): sys.exit("Caltable was not created and cannot continue. Exiting...")
         plotms(vis=caltable, xaxis='frequency', yaxis='delay', antenna=self.kcross_refant, coloraxis='corr', showgui=False, plotfile=self.vis[:-3]+'.freqvsdelayKcross.png', overwrite=True)
         self.kcrosstable = caltable
@@ -177,7 +189,7 @@ class PolCalibration(object):
         lastspw=self.spw_ids[-1]
 
         spw = str(firstspw)+'~'+str(lastspw)
-        spwmap0 = [0] * self.nspw
+        spwmap0 = [self.mapped_spw] * self.nspw
         spwmap=[spwmap0, []]
         interp = [interpmode] * len(gaintable)
         if(self.old_VLA):
@@ -188,7 +200,7 @@ class PolCalibration(object):
         self.logger.info("Spw: ", spw)
         self.casalog.post("Spw: ", spw, "INFO")
         print("Spwmap: ", spwmap)
-        polcal(vis=self.vis, caltable=caltable, field=self.leakagefield, spw=spw, refant=self.refant, poltype=poltype, solint=solint, spwmap=spwmap, combine='scan', interp=interp, minsnr=minsnr, gaintable=gaintable, gainfield=gainfield)
+        polcal(vis=self.vis, caltable=caltable, field=self.leakagefield, spw=spw, refant=self.refant, antenna=self.antennas, poltype=poltype, solint=solint, spwmap=spwmap, combine='scan', interp=interp, minsnr=minsnr, gaintable=gaintable, gainfield=gainfield)
 
         if not os.path.exists(caltable): sys.exit("Caltable was not created and cannot continue. Exiting...")
 
@@ -235,7 +247,7 @@ class PolCalibration(object):
         lastspw=self.spw_ids[-1]
 
         spw = str(firstspw)+'~'+str(lastspw)
-        spwmap0 = [0] * self.nspw
+        spwmap0 = [self.mapped_spw] * self.nspw
         spwmap=[spwmap0, []]
         interp = [interpmode] * len(gaintable)
         if(self.old_VLA):
@@ -246,7 +258,7 @@ class PolCalibration(object):
         self.logger.info("Spw: ", spw)
         self.casalog.post("Spw: ", spw, "INFO")
         print("Spwmap: ", spwmap)
-        polcal(vis=self.vis, caltable=caltable, field=self.polanglefield, spw=spw, refant=self.refant, poltype=poltype, solint=solint, combine='scan', spwmap=spwmap, interp=interp, minsnr=minsnr, gaintable=gaintable, gainfield=gainfield)
+        polcal(vis=self.vis, caltable=caltable, field=self.polanglefield, spw=spw, refant=self.refant, antenna=self.antennas, poltype=poltype, solint=solint, combine='scan', spwmap=spwmap, interp=interp, minsnr=minsnr, gaintable=gaintable, gainfield=gainfield)
 
         if not os.path.exists(caltable): sys.exit("Caltable was not created and cannot continue. Exiting...")
         plotms(vis=caltable,xaxis='frequency',yaxis='phase',coloraxis='spw', showgui=False, plotfile=self.vis[:-3]+'.X0.phasevsfreq.png', overwrite=True)
@@ -267,7 +279,7 @@ class PolCalibration(object):
         spw = str(firstspw)+'~'+str(lastspw)
         self.logger.info("Spw: "+ spw)
         self.casalog.post("Spw: "+ spw, "INFO")
-        spwmap0 = [0] * self.nspw
+        spwmap0 = [self.mapped_spw] * self.nspw
         interp = [''] * len(gaintable)
         calwt = [False] * len(gaintable)
         if(gainfield == []): gainfield = ['']
@@ -280,7 +292,7 @@ class PolCalibration(object):
         spw = str(firstspw)+'~'+str(lastspw)
         self.logger.info("Spw: "+ spw)
         self.casalog.post("Spw: "+ spw, "INFO")
-        spwmap0 = [0] * self.nspw
+        spwmap0 = [self.mapped_spw] * self.nspw
         interp = [''] * len(gaintable)
         calwt = [False] * len(gaintable)
         if(gainfield == []): gainfield = ['']
@@ -304,7 +316,7 @@ class PolCalibration(object):
 
         interp = [''] * len(gaintable)
         spw = str(firstspw)+'~'+str(lastspw)
-        spwmap0 = [0] * self.nspw
+        spwmap0 = [self.mapped_spw] * self.nspw
         spwmap = [spwmap0, [], []]
         calwt = [False] * len(gaintable)
         selectdata=True
