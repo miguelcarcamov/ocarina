@@ -7,9 +7,15 @@ sys.path.append(os.path.join(os.path.dirname(sys.argv[0]), '.'))
 from polcalibration.polarizedsource import PolarizedSource
 from polcalibration.function import PolFunction, FluxFunction
 from matplotlib.ticker import ScalarFormatter, NullFormatter
-from matplotlib import rc
-rc('text', usetex=True)
-rc('font', family='serif')
+
+plt.rcParams.update({
+    #'figure.figsize': (W, W/(4/3)),     # 4:3 aspect ratio
+    'font.size' : 11,                   # Set font size to 11pt
+    'axes.labelsize': 11,               # -> axis labels
+    'legend.fontsize': 11,              # -> legends
+    'font.family': 'lmodern',
+    'text.usetex': True
+})
 
 def formatAxes(ax):
     for axis in [ax.xaxis, ax.yaxis]:
@@ -53,7 +59,7 @@ if __name__ == '__main__':
     # Get polarization angle coeffs
     p3c286_polangle_coeffs = p3c286.getPolAngleCoeffs(nu_0=np.median(p3c286.getNu()), nterms=6, nu_min=np.min(p3c286.getNu()), nu_max=np.max(p3c286.getNu()))
     p3c147_polangle_coeffs = p3c147.getPolAngleCoeffs(nu_0=np.median(p3c147.getNu()), nterms=6, nu_min=np.min(p3c147.getNu()), nu_max=np.max(p3c147.getNu()))
-
+    """
     fig, axs = plt.subplots(1,1)
     nu_GHz = nu/1e9
     data = flux_p3c286
@@ -87,15 +93,18 @@ if __name__ == '__main__':
     #print(p3c286_polangle_coeffs)
     data_fit = plot_pol_function_p3c286.f_eval(p3c286.getNu(), p3c286_polangle_coeffs) * 180.0 / np.pi
     print(data_fit)
-    axs.plot(nu_GHz, data)
-    axs.plot(nu_GHz, data_fit)
+    axs.plot(nu_GHz, data, label="Data", color='black', linewidth=2)
+    axs.plot(nu_GHz, data_fit, label="Fit", color='red', linewidth=2)
     axs.xaxis.set_major_locator(plt.MaxNLocator(8))
     axs.yaxis.set_major_locator(plt.MaxNLocator(6))
+    axs.set_ylabel("Degrees")
+    axs.set_xlabel("Frequency (GHz)")
     axs.grid()
-    posx = np.max(nu_GHz)- 3
-    posy = np.max(data)- 0.025
-    axs.text(posx, posy, p3c286.getName(), style='italic', bbox={'facecolor': 'white', 'alpha': 0.5, 'pad': 10})
-
+    axs.legend()
+    #posx = np.max(nu_GHz)- 3
+    #posy = np.max(data)- 0.025
+    #axs.text(posx, posy, p3c286.getName(), style='italic', bbox={'facecolor': 'white', 'alpha': 0.5, 'pad': 10})
+    """
     axs[0,0].plot(nu_GHz, data )
     axs[0,0].set_xlim([np.min(nu_GHz),np.max(nu_GHz)])
     axs[0,0].set_ylim([np.min(data),np.max(data)])
@@ -119,8 +128,6 @@ if __name__ == '__main__':
     posy = np.max(data)- 0.1
     axs[0,1].text(posx, posy, p3c147.getName(), style='italic', bbox={'facecolor': 'white', 'alpha': 0.5, 'pad': 10})
     """
-
-    plt.tight_layout()
-    plt.savefig('fluxes_fit.png')
+    plt.savefig('pol_angle.pdf', bbox_inches='tight')
     os.system('rm -rf *.log')
     os.system('rm -rf *.last')

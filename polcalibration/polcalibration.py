@@ -86,7 +86,7 @@ class PolCalibration(object):
         field_id = field_ids[field_id_query]
         print("Field "+field+" - ID: " + str(field_id))
         field_table.close()
-        fluxtable = self.vis[:-3]+".F0"
+        fluxtable = self.vis[:-3]+"."+field
         if os.path.exists(fluxtable): rmtables(fluxtable)
         # From fluxscale documentation we know that the coefficients are return from the natural log nu/nu_0 Taylor expansion
         fluxdict = fluxscale(vis=self.vis, fluxtable=fluxtable, caltable=gaintable, reference=referencefield, transfer=transferfield, fitorder=fitorder)
@@ -173,7 +173,7 @@ class PolCalibration(object):
         return caltable
 
 
-    def calibrateLeakage(self, solint='inf', minsnr=3.0, poltype="Df", gaintable=[], gainfield=[], clipmin=0.0, clipmax=0.25, flagclip=True, interpmode='linear'):
+    def calibrateLeakage(self, solint='inf', minsnr=3.0, poltype="Df", gaintable=[], gainfield=[], clipmin=0.0, clipmax=0.25, flagclip=True, interpmode='linear', spw=None, field=None):
         if(gaintable == []):
             if(self.kcrosstable == ""):
                 gaintable=[]
@@ -190,15 +190,28 @@ class PolCalibration(object):
         print("Gain tables: ", gaintable)
         self.logger.info("Refant: "+ self.refant)
         self.casalog.post("Refant: "+ self.refant, "INFO")
-        caltable = self.vis[:-3]+".D0"
+
+        if field is None:
+            caltable = self.vis[:-3]+".D0"
+        else:
+            caltable = self.vis[:-3]+".D"+field
+
         if(gainfield == []): gainfield=[''] * len(gaintable)
         if os.path.exists(caltable): rmtables(caltable)
         firstspw=self.spw_ids[0]
         lastspw=self.spw_ids[-1]
 
-        spw = str(firstspw)+'~'+str(lastspw)
+        if spw is None:
+            spw = str(firstspw)+'~'+str(lastspw)
+
         spwmap0 = [self.mapped_spw] * self.nspw
-        spwmap=[spwmap0, []]
+        
+        if(len(gaintable)-1 == 0):
+            spwmap=[spwmap0]
+        else:
+            spwmap_empty = [[]] * (len(gaintable)-1) #subtract kcrosstable
+            spwmap=spwmap_empty.insert(0, spwmap0)
+
         interp = [interpmode] * len(gaintable)
         if(self.old_VLA):
             spw = ''
@@ -208,7 +221,11 @@ class PolCalibration(object):
         self.logger.info("Spw: ", spw)
         self.casalog.post("Spw: ", spw, "INFO")
         print("Spwmap: ", spwmap)
-        polcal(vis=self.vis, caltable=caltable, field=self.leakagefield, spw=spw, refant=self.refant, antenna=self.antennas, poltype=poltype, solint=solint, spwmap=spwmap, combine='scan', interp=interp, minsnr=minsnr, gaintable=gaintable, gainfield=gainfield)
+
+        if field is None:
+            polcal(vis=self.vis, caltable=caltable, field=self.leakagefield, spw=spw, refant=self.refant, antenna=self.antennas, poltype=poltype, solint=solint, spwmap=spwmap, combine='scan', interp=interp, minsnr=minsnr, gaintable=gaintable, gainfield=gainfield)
+        else:
+            polcal(vis=self.vis, caltable=caltable, field=field, spw=spw, refant=self.refant, antenna=self.antennas, poltype=poltype, solint=solint, spwmap=spwmap, combine='scan', interp=interp, minsnr=minsnr, gaintable=gaintable, gainfield=gainfield)
 
         if not os.path.exists(caltable): sys.exit("Caltable was not created and cannot continue. Exiting...")
 
@@ -256,7 +273,8 @@ class PolCalibration(object):
 
         spw = str(firstspw)+'~'+str(lastspw)
         spwmap0 = [self.mapped_spw] * self.nspw
-        spwmap=[spwmap0, []]
+        spwmap_empty = [[]] * (len(gaintable)-1) #subtract kcrosstable
+        spwmap=spwmap_empty.insert(0, spwmap0)
         interp = [interpmode] * len(gaintable)
         if(self.old_VLA):
             spw = ''
