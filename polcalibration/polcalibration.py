@@ -81,6 +81,7 @@ class PolCalibration(object):
 
         field_id_table = queryTable(table=self.vis, query="SELECT ROWID() AS FIELD_ID FROM "+self.vis"/FIELD WHERE NAME="+field)
         field_id = field_id_table.getcol("FIELD_ID")[0]
+        print("Field_ID: " + str(field_id))
         field_id_table.close()
         fluxtable = self.vis[:-3]+".F0"
         if os.path.exists(fluxtable): rmtables(fluxtable)
