@@ -81,8 +81,11 @@ class PolCalibration(object):
 
         field_table = queryTable(table=self.vis, query="SELECT NAME FROM "+self.vis+"/FIELD")
         field_ids = field_table.rownumbers()
+        print(field_ids)
         fields = field_table.getcol("NAME")
-        field_id = np.where(fields == field)[0][0]
+        field_id_query = np.where(fields == field)[0][0]
+        print(field_id_query)
+        field_id = field_ids[field_id_query]
         print("Field_ID: " + str(field_id))
         field_id_table.close()
         fluxtable = self.vis[:-3]+".F0"
