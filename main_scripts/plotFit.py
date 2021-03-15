@@ -61,8 +61,8 @@ if __name__ == '__main__':
     #print(p3c286_polangle_coeffs)
     data_fit = fitted_flux_p3c286
     #print(data_fit)
-    axs.loglog(nu_GHz, data, label="Data")
-    axs.loglog(nu_GHz, data_fit, label="Fit")
+    axs.loglog(nu_GHz, data, label="Data", color='black', linewidth=2)
+    axs.loglog(nu_GHz, data_fit, label="Fit", color='red', linewidth=2)
     axs.xaxis.set_major_locator(plt.MaxNLocator(8))
     axs.yaxis.set_major_locator(plt.MaxNLocator(6))
     axs.set_xticks(nu_GHz)
@@ -76,9 +76,9 @@ if __name__ == '__main__':
     axs.set_xlabel("Frequency (GHz)")
     axs.grid()
     axs.legend()
-    posx = np.max(nu_GHz)- 6
-    posy = np.max(data)- 8
-    axs.text(posx, posy, p3c286.getName(), style='italic', bbox={'facecolor': 'white', 'alpha': 0.5, 'pad': 10})
+    #posx = np.max(nu_GHz)- 6
+    #posy = np.max(data)- 8
+    #axs.text(posx, posy, p3c286.getName(), style='italic', bbox={'facecolor': 'white', 'alpha': 0.5, 'pad': 10})
     """
     fig, axs = plt.subplots(1,1)
 

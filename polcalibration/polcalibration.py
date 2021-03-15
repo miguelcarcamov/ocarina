@@ -79,8 +79,10 @@ class PolCalibration(object):
 
     def setUnknownModel(self, pol_source_object=None, field="", gaintable="", referencefield="", transferfield="", fitorder=1, usescratch=False):
 
-        field_id_table = queryTable(table=self.vis, query="SELECT ROWID() AS FIELD_ID FROM "+self.vis+"/FIELD WHERE NAME='"+field+"'")
-        field_id = field_id_table.getcol("FIELD_ID")[0]
+        field_table = queryTable(table=self.vis, query="SELECT NAME FROM "+self.vis+"/FIELD")
+        field_ids = field_table.rownumbers()
+        fields = field_table.getcol("NAME")
+        field_id = np.where(fields == field)[0][0]
         print("Field_ID: " + str(field_id))
         field_id_table.close()
         fluxtable = self.vis[:-3]+".F0"
