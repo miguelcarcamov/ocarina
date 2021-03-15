@@ -107,7 +107,10 @@ class PolarizedSource(object):
     def getPolAngle(self):
         return self.polangle
 
-    def setPolDeg(self, polangle=np.array([])):
+    def getPolAngleDegrees(self):
+        return self.polangle * 180.0 / np.pi
+
+    def setPolAngle(self, polangle=np.array([])):
         self.polangle = polangle
 
     def getPolFrac(self):

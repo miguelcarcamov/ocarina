@@ -5,8 +5,8 @@ import matplotlib.pyplot as plt
 import matplotlib
 sys.path.append(os.path.join(os.path.dirname(sys.argv[0]), '.'))
 
-from polarizedsource import PolarizedSource
-from function import PolFunction
+from polcalibration.polarizedsource import PolarizedSource
+from polcalibration.function import PolFunction
 from matplotlib import rc
 from matplotlib.ticker import ScalarFormatter, NullFormatter
 
@@ -68,10 +68,10 @@ if __name__ == '__main__':
     print("len nu: ", len(nu_points_3c123))
     print("3c295: ", len(sigmapoints_3c123))
     nu = np.linspace(0.3275 * 1e9, 50.0 * 1e9, 40)
-    p3c123 = PolarizedSource(knownSource="3C123")
-    p3c196 = PolarizedSource(knownSource="3C196")
-    p3c286 = PolarizedSource(knownSource="3C286")
-    p3c295 = PolarizedSource(knownSource="3C295")
+    p3c123 = PolarizedSource(source="3C123")
+    p3c196 = PolarizedSource(source="3C196")
+    p3c286 = PolarizedSource(source="3C286")
+    p3c295 = PolarizedSource(source="3C295")
 
     p3c123.getCoeffs(standard="Perley-Butler 2013", epoch="2012")
     p3c196.getCoeffs(standard="Perley-Butler 2013", epoch="2012")

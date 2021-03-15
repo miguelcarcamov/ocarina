@@ -4,8 +4,8 @@ import numpy as np
 import os
 import sys
 sys.path.append(os.path.join(os.path.dirname(sys.argv[0]), '.'))
-from polarizedsource import PolarizedSource
-from function import PolFunction
+from polcalibration.polarizedsource import PolarizedSource
+from polcalibration.function import PolFunction
 from matplotlib.ticker import ScalarFormatter, NullFormatter
 from matplotlib import rc
 rc('text', usetex=True)
@@ -19,10 +19,10 @@ def formatAxes(ax):
 if __name__ == '__main__':
     nu = np.linspace(0.3275*1e9, 50.0*1e9, 40)
 
-    p3c48 = PolarizedSource(knownSource="3c48")
-    p3c286 = PolarizedSource(knownSource="3c286")
-    p3c138 = PolarizedSource(knownSource="3c138")
-    p3c147 = PolarizedSource(knownSource="3c147")
+    p3c48 = PolarizedSource(source="3c48")
+    p3c286 = PolarizedSource(source="3c286")
+    p3c138 = PolarizedSource(source="3c138")
+    p3c147 = PolarizedSource(source="3c147")
 
     p3c48.getCoeffs(standard="Perley-Butler 2013", epoch="2012")
     p3c286.getCoeffs(standard="Perley-Butler 2013", epoch="2012")

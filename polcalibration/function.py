@@ -87,6 +87,6 @@ class PolFunction(Function):
 
     def f_eval(self, xdata, coeffs):
         y = np.zeros(len(xdata))
-        for i in range(0, self.nterms):
+        for i in range(0, len(coeffs)):
             y += coeffs[i] * np.power((xdata - self.x_0) / self.x_0, i)
         return y

@@ -78,12 +78,16 @@ class PolCalibration(object):
         self.antennas = antennas
 
     def setUnknownModel(self, pol_source_object=None, field="", gaintable="", referencefield="", transferfield="", fitorder=1, usescratch=False):
+
+        field_id_table = queryTable(table=self.vis, query="SELECT ROWID() AS FIELD_ID FROM "+self.vis"/FIELD WHERE NAME="+field)
+        field_id = field_id_table.getcol("FIELD_ID")[0]
+        field_id_table.close()
         fluxtable = self.vis[:-3]+".F0"
         if os.path.exists(fluxtable): rmtables(fluxtable)
         # From fluxscale documentation we know that the coefficients are return from the natural log nu/nu_0 Taylor expansion
         fluxdict = fluxscale(vis=self.vis, fluxtable=fluxtable, caltable=gaintable, reference=referencefield, transfer=transferfield, fitorder=fitorder)
         print(fluxdict)
-        coeffs = fluxdict['2']['spidx'].tolist()
+        coeffs = fluxdict[str(field_id)]['spidx'].tolist()
 
         print("Coeffs: ", coeffs) # a0 log10(S at nu_0), a1 spectral idx, a2 spectral curvature
         pol_source_object.setCoeffs(coeffs)
