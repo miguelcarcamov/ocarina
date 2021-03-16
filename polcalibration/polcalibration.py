@@ -86,7 +86,7 @@ class PolCalibration(object):
         field_id = field_ids[field_id_query]
         print("Field "+field+" - ID: " + str(field_id))
         field_table.close()
-        fluxtable = self.vis[:-3]+"."+field
+        fluxtable = self.vis[:-3]+".F."+field
         if os.path.exists(fluxtable): rmtables(fluxtable)
         # From fluxscale documentation we know that the coefficients are return from the natural log nu/nu_0 Taylor expansion
         fluxdict = fluxscale(vis=self.vis, fluxtable=fluxtable, caltable=gaintable, reference=referencefield, transfer=transferfield, fitorder=fitorder)
@@ -197,7 +197,7 @@ class PolCalibration(object):
             self.casalog.post("Field: "+ self.leakagefield, "INFO")
             print("Field "+self.leakagefield)
         else:
-            caltable = self.vis[:-3]+".D"+field
+            caltable = self.vis[:-3]+".D."+field
             self.logger.info("Field: "+ field)
             self.casalog.post("Field: "+ field, "INFO")
             print("Field "+field)
@@ -212,9 +212,9 @@ class PolCalibration(object):
 
         spwmap0 = [self.mapped_spw] * self.nspw
 
-        if(len(gaintable)-1 == 0):
-            spwmap=[spwmap0]
-        else:
+        spwmap=[spwmap0] # Default option   
+
+        if(len(gaintable)-1 > 0):
             spwmap_empty = [[]] * (len(gaintable)-1) #subtract kcrosstable
             spwmap=spwmap_empty.insert(0, spwmap0)
 
@@ -279,11 +279,13 @@ class PolCalibration(object):
 
         spw = str(firstspw)+'~'+str(lastspw)
         spwmap0 = [self.mapped_spw] * self.nspw
-        if(len(gaintable)-1 == 0):
-            spwmap=[spwmap0]
-        else:
+
+        spwmap=[spwmap0] # Default option
+
+        if(len(gaintable)-1 > 0):
             spwmap_empty = [[]] * (len(gaintable)-1) #subtract kcrosstable
             spwmap=spwmap_empty.insert(0, spwmap0)
+
         interp = [interpmode] * len(gaintable)
         if(self.old_VLA):
             spw = ''
@@ -352,11 +354,12 @@ class PolCalibration(object):
         interp = [''] * len(gaintable)
         spw = str(firstspw)+'~'+str(lastspw)
         spwmap0 = [self.mapped_spw] * self.nspw
-        if(len(gaintable)-1 == 0):
-            spwmap=[spwmap0]
-        else:
+
+        spwmap=[spwmap0] # Default option
+        if(len(gaintable)-1 > 0):
             spwmap_empty = [[]] * (len(gaintable)-1) #subtract kcrosstable
             spwmap=spwmap_empty.insert(0, spwmap0)
+
         calwt = [False] * len(gaintable)
         selectdata=True
         if(self.old_VLA):
