@@ -211,12 +211,14 @@ class PolCalibration(object):
             spw = str(firstspw)+'~'+str(lastspw)
 
         spwmap0 = [self.mapped_spw] * self.nspw
+        print("Spwmap0 ", spwmap0)
 
         spwmap = []
         spwmap_empty = []
         if(len(gaintable)-1 > 0):
             print("Enter if, len gaintable", len(gaintable))
             spwmap_empty = [[]] * (len(gaintable)-1) #subtract kcrosstable
+            print("Spwmap: ", spwmap_empty)
             spwmap=spwmap_empty.insert(0, spwmap0)
             print("Spwmap: ", spwmap)
         else:
