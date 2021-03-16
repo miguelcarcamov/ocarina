@@ -207,7 +207,7 @@ class PolCalibration(object):
         firstspw=self.spw_ids[0]
         lastspw=self.spw_ids[-1]
 
-        if spw = "":
+        if spw == "":
             spw = str(firstspw)+'~'+str(lastspw)
 
         spwmap0 = [self.mapped_spw] * self.nspw
@@ -280,7 +280,7 @@ class PolCalibration(object):
         firstspw=self.spw_ids[0]
         lastspw=self.spw_ids[-1]
 
-        if spw = "":
+        if spw == "":
             spw = str(firstspw)+'~'+str(lastspw)
 
         spwmap0 = [self.mapped_spw] * self.nspw
