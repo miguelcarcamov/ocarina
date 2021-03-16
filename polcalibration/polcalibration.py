@@ -173,7 +173,7 @@ class PolCalibration(object):
         return caltable
 
 
-    def calibrateLeakage(self, solint='inf', minsnr=3.0, poltype="Df", gaintable=[], gainfield=[], clipmin=0.0, clipmax=0.25, flagclip=True, interpmode='linear', spw="", field=""):
+    def calibrateLeakage(self, solint='inf', minsnr=3.0, poltype="Df", spwmap=[], gaintable=[], gainfield=[], clipmin=0.0, clipmax=0.25, flagclip=True, interpmode='linear', spw="", field=""):
         if(gaintable == []):
             if(self.kcrosstable == ""):
                 gaintable=[]
@@ -212,12 +212,13 @@ class PolCalibration(object):
 
         spwmap0 = [self.mapped_spw] * self.nspw
 
-        if(len(gaintable)-1 > 0):
-            spwmap_empty = [[]] * (len(gaintable)-1) #subtract kcrosstable
-            spwmap_empty.insert(0, spwmap0)
-            spwmap = spwmap_empty
-        else:
-            spwmap=[spwmap0]
+        if(spwmap == []):
+            if(len(gaintable)-1 > 0):
+                spwmap_empty = [[]] * (len(gaintable)-1) #subtract kcrosstable
+                spwmap_empty.insert(0, spwmap0)
+                spwmap = spwmap_empty
+            else:
+                spwmap=[spwmap0]
 
         interp = [interpmode] * len(gaintable)
 
@@ -254,7 +255,7 @@ class PolCalibration(object):
         self.leakagetable = caltable
         return caltable
 
-    def calibratePolAngle(self, solint='inf', minsnr=3.0, poltype="Xf", gaintable=[], gainfield=[], interpmode='linear', spw="", field=""):
+    def calibratePolAngle(self, solint='inf', minsnr=3.0, poltype="Xf", spwmap=[], gaintable=[], gainfield=[], interpmode='linear', spw="", field=""):
         if(gaintable == []):
             if(self.kcrosstable == ""):
                 gaintable=[self.leakagetable]
@@ -284,12 +285,13 @@ class PolCalibration(object):
 
         spwmap0 = [self.mapped_spw] * self.nspw
 
-        if(len(gaintable)-1 > 0):
-            spwmap_empty = [[]] * (len(gaintable)-1) #subtract kcrosstable
-            spwmap_empty.insert(0, spwmap0)
-            spwmap = spwmap_empty
-        else:
-            spwmap=[spwmap0]
+        if(spwmap == []):
+            if(len(gaintable)-1 > 0):
+                spwmap_empty = [[]] * (len(gaintable)-1) #subtract kcrosstable
+                spwmap_empty.insert(0, spwmap0)
+                spwmap = spwmap_empty
+            else:
+                spwmap=[spwmap0]
 
         interp = [interpmode] * len(gaintable)
         if(self.old_VLA):
@@ -347,7 +349,7 @@ class PolCalibration(object):
     def applySingleSolution(self, field='', spw='', gaintable=[], gainfield=[], selectdata=True, spwmap=[], calwt=[False], applymode="calflagstrict", interp='linear', antenna='', flagbackup=True):
         applycal(vis=self.vis, field='', spw=spw, gaintable=gaintable, gainfield=gainfield, selectdata=selectdata, spwmap=spwmap, calwt=calwt, applymode=applymode, interp=interp, antenna=antenna, parang=True, flagbackup=flagbackup)
 
-    def applySolutions(self, gaintable=[], gainfield=[], applymode="calflagstrict", antenna='*&*', flagbackup=True):
+    def applySolutions(self, spwmap=[], gaintable=[], gainfield=[], applymode="calflagstrict", antenna='*&*', flagbackup=True):
         #leakagegain.append(fluxtable)
         if(gaintable == []):
             if(self.kcrosstable == ""):
@@ -362,15 +364,16 @@ class PolCalibration(object):
 
         interp = [''] * len(gaintable)
         spw = str(firstspw)+'~'+str(lastspw)
-        
+
         spwmap0 = [self.mapped_spw] * self.nspw
 
-        if(len(gaintable)-1 > 0):
-            spwmap_empty = [[]] * (len(gaintable)-1) #subtract kcrosstable
-            spwmap_empty.insert(0, spwmap0)
-            spwmap = spwmap_empty
-        else:
-            spwmap=[spwmap0]
+        if(spwmap == []):
+            if(len(gaintable)-1 > 0):
+                spwmap_empty = [[]] * (len(gaintable)-1) #subtract kcrosstable
+                spwmap_empty.insert(0, spwmap0)
+                spwmap = spwmap_empty
+            else:
+                spwmap=[spwmap0]
 
         calwt = [False] * len(gaintable)
         selectdata=True
