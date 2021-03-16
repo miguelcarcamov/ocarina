@@ -212,16 +212,20 @@ class PolCalibration(object):
 
         spwmap0 = [self.mapped_spw] * self.nspw
 
-
         spwmap = []
         spwmap_empty = []
         if(len(gaintable)-1 > 0):
+            print("Enter if, len gaintable", len(gaintable))
             spwmap_empty = [[]] * (len(gaintable)-1) #subtract kcrosstable
             spwmap=spwmap_empty.insert(0, spwmap0)
+            print("Spwmap: ", spwmap)
         else:
+            print("Enter else, len gaintable", len(gaintable))
             spwmap=[spwmap0]
+            print("Spwmap: ", spwmap)
 
         interp = [interpmode] * len(gaintable)
+
         if(self.old_VLA):
             spw = ''
             spwmap = []
@@ -230,6 +234,7 @@ class PolCalibration(object):
         self.logger.info("Spw: " + spw)
         self.casalog.post("Spw: " + spw, "INFO")
         print("Spwmap: ", spwmap)
+        sys.exit(-1)
 
         if field == "":
             polcal(vis=self.vis, caltable=caltable, field=self.leakagefield, spw=spw, refant=self.refant, antenna=self.antennas, poltype=poltype, solint=solint, spwmap=spwmap, combine='scan', interp=interp, minsnr=minsnr, gaintable=gaintable, gainfield=gainfield)
