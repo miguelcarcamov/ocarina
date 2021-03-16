@@ -127,7 +127,7 @@ class PolarizedSource(object):
 
     # Returns values in an array lower than a certain frequency
     def filter(self, nu, data, nu_min=0.0, nu_max=np.inf):
-        indexes = np.where((nu > nu_min) & (nu < nu_max))
+        indexes = np.where((nu >= nu_min) & (nu <= nu_max))
         nu = nu[indexes]
         data = data[indexes]
         return nu, data
@@ -172,6 +172,7 @@ class PolarizedSource(object):
         source_func_frac.fit(nu, fluxes, i_coeffs)
         return source_func_frac.getCoeffs().tolist()
 
+    # Returns pol fraction coeffs
     def getPolFracCoeffs(self, nu_0=0.0, nterms=3, nu_min=0.0, nu_max=np.inf):
         nu, polfrac = self.filter(self.getNu(), self.getPolFrac(), nu_min, nu_max)
         if(not nu_0):

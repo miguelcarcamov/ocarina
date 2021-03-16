@@ -131,3 +131,4 @@ dmypy.json
 *.png
 *.eps
 *.last
+*.pdf

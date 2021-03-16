@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 import sys
+from scipy.constants import speed_of_light as c
 sys.path.append(os.path.join(os.path.dirname(sys.argv[0]), '.'))
 from polcalibration.polarizedsource import PolarizedSource
 from polcalibration.function import PolFunction, FluxFunction
@@ -36,9 +37,6 @@ if __name__ == '__main__':
     p3c286 = PolarizedSource(source="3c286")
     p3c147 = PolarizedSource(source="3c147")
 
-    plot_pol_function_p3c286 = PolFunction(x_0=np.median(p3c286.getNu()))
-    plot_pol_function_p3c147 = PolFunction(x_0=np.median(p3c147.getNu()))
-
     # Get flux density coefficients
     p3c286_flux_coeffs = p3c286.getCoeffs(standard="Perley-Butler 2013", epoch="2012")
     p3c147_flux_coeffs = p3c147.getCoeffs(standard="Perley-Butler 2013", epoch="2012")
@@ -58,12 +56,12 @@ if __name__ == '__main__':
     fitted_flux_p3c147 = fluxFunction_p3c147.f_eval(nu, p3c147_spidx)
 
     # Get polarization fraction coeffs
-    p3c286_polfrac_coeffs = p3c286.getPolFracCoeffs(nu_0=np.median(p3c286.getNu()), nterms=6, nu_min=np.min(p3c286.getNu()), nu_max=np.max(p3c286.getNu()))
-    p3c147_polfrac_coeffs = p3c147.getPolFracCoeffs(nu_0=np.median(p3c147.getNu()), nterms=6, nu_min=np.min(p3c147.getNu()), nu_max=np.max(p3c147.getNu()))
+    p3c286_polfrac_coeffs = p3c286.getPolFracCoeffs(nterms=2, nu_min=1.008*1e9, nu_max=2.031*1e9)
+    p3c147_polfrac_coeffs = p3c147.getPolFracCoeffs(nterms=2, nu_min=1.008*1e9, nu_max=2.031*1e9)
 
     # Get polarization angle coeffs
-    p3c286_polangle_coeffs = p3c286.getPolAngleCoeffs(nu_0=np.median(p3c286.getNu()), nterms=6, nu_min=np.min(p3c286.getNu()), nu_max=np.max(p3c286.getNu()))
-    p3c147_polangle_coeffs = p3c147.getPolAngleCoeffs(nu_0=np.median(p3c147.getNu()), nterms=6, nu_min=np.min(p3c147.getNu()), nu_max=np.max(p3c147.getNu()))
+    p3c286_polangle_coeffs = p3c286.getPolAngleCoeffs(nterms=2, nu_min=1.008*1e9, nu_max=2.031*1e9)
+    p3c147_polangle_coeffs = p3c147.getPolAngleCoeffs(nterms=2, nu_min=1.008*1e9, nu_max=2.031*1e9)
 
     fig, axs = plt.subplots(1,1)
     nu_GHz = nu/1e9
@@ -115,49 +113,101 @@ if __name__ == '__main__':
     axs.grid()
     axs.legend()
     plt.savefig('3c147_fluxfit.pdf', bbox_inches='tight')
-    """
-    fig, axs = plt.subplots(1,1)
 
+
+    fig, axs = plt.subplots(1,1)
+    nu_Hz = p3c286.getNu()
     nu_GHz = p3c286.getNu()/1e9
+    lambda2_m = (c/nu_Hz)**2
+    lambda2_m = lambda2_m[::-1]
+    l_band_idx = np.where((nu_GHz>=1.008) & (nu_GHz<=2.031))
+    l_band_l2 = (c/nu_Hz[l_band_idx])**2
+    l_band_l2 = l_band_l2[::-1]
     data = p3c286.getPolAngleDegrees()
+    data_l2 = data[::-1]
+
+    plot_pol_function_p3c286 = PolFunction(x_0=np.median(nu_GHz[l_band_idx]))
+    plot_pol_function_p3c147 = PolFunction(x_0=np.median(nu_GHz[l_band_idx]))
     #print(p3c286_polangle_coeffs)
-    data_fit = plot_pol_function_p3c286.f_eval(p3c286.getNu(), p3c286_polangle_coeffs) * 180.0 / np.pi
-    print(data_fit)
-    axs.plot(nu_GHz, data, label="Data", color='black', linewidth=2)
-    axs.plot(nu_GHz, data_fit, label="Fit", color='red', linewidth=2)
-    axs.xaxis.set_major_locator(plt.MaxNLocator(8))
-    axs.yaxis.set_major_locator(plt.MaxNLocator(6))
+    #print(data_fit)
+    #axs.plot(JVLA_nu, data_fit, label="Fit", color='red', linewidth=2)
+    axs.plot(lambda2_m, data_l2, label="Data", color='black', linewidth=2)
+    axs.fill_between(l_band_l2, np.min(data_l2), np.max(data_l2), color = 'cyan', alpha = 0.2)
+    #axs.xaxis.set_major_locator(plt.MaxNLocator(8))
+    #axs.yaxis.set_major_locator(plt.MaxNLocator(6))
     axs.set_ylabel("Degrees")
-    axs.set_xlabel("Frequency (GHz)")
+    axs.set_xlabel(r'$\lambda^2$ (m$^2$)')
     axs.grid()
     axs.legend()
+    axs.set_xlim(np.min(lambda2_m), np.max(lambda2_m))
+    axs.set_ylim(np.min(data_l2), np.max(data_l2))
     #posx = np.max(nu_GHz)- 3
     #posy = np.max(data)- 0.025
     #axs.text(posx, posy, p3c286.getName(), style='italic', bbox={'facecolor': 'white', 'alpha': 0.5, 'pad': 10})
-    """
-    """
-    axs[0,0].plot(nu_GHz, data )
-    axs[0,0].set_xlim([np.min(nu_GHz),np.max(nu_GHz)])
-    axs[0,0].set_ylim([np.min(data),np.max(data)])
-    axs[0,0].xaxis.set_major_locator(plt.MaxNLocator(8))
-    axs[0,0].yaxis.set_major_locator(plt.MaxNLocator(6))
-    axs[0,0].grid()
-    posx = np.max(nu_GHz)- 3
-    posy = np.max(data)- 0.025
-    axs[0,0].text(posx, posy, p3c286.getName(), style='italic', bbox={'facecolor': 'white', 'alpha': 0.5, 'pad': 10})
+    plt.savefig('3c286_polanglefit.pdf', bbox_inches='tight')
 
-    nu_GHz = p3c147.getNu()/1e9
-    data = p3c147.getPolAngleDegrees()
-    axs[0,1].plot(nu_GHz, data)
-    axs[0,1].set_xlim([np.min(nu_GHz),np.max(nu_GHz)])
-    axs[0,1].set_ylim([np.min(data),np.max(data)])
-    axs[0,1].xaxis.set_major_locator(plt.MaxNLocator(8))
-    axs[0,1].yaxis.set_major_locator(plt.MaxNLocator(6))
-    axs[0,1].grid()
-    axs[0,1].set_xlabel("Frequency (GHz)")
-    posx = np.max(nu_GHz)- 3
-    posy = np.max(data)- 0.1
-    axs[0,1].text(posx, posy, p3c147.getName(), style='italic', bbox={'facecolor': 'white', 'alpha': 0.5, 'pad': 10})
-    """
+    range = 1e-2
+    fig, axs = plt.subplots(1,1)
+    #print(p3c286_polangle_coeffs)
+    data_fit = plot_pol_function_p3c286.f_eval(nu_GHz[l_band_idx], p3c286_polangle_coeffs) * 180.0 / np.pi
+    data_fit_l2 = data_fit[::-1]
+    axs.plot(l_band_l2, data_fit_l2, label="Fit", color='red', linewidth=2)
+    axs.plot(lambda2_m, data_l2, label="Data", color='black', linewidth=2)
+    axs.fill_between(l_band_l2, np.min(data_l2), np.max(data_l2), color = 'cyan', alpha = 0.2)
+    #axs.xaxis.set_major_locator(plt.MaxNLocator(8))
+    #axs.yaxis.set_major_locator(plt.MaxNLocator(6))
+    axs.set_ylabel("Degrees")
+    axs.set_xlabel(r'$\lambda^2$ (m$^2$)')
+    axs.grid()
+    axs.legend()
+    axs.set_xlim(np.min(l_band_l2), np.max(l_band_l2))
+    axs.set_ylim(np.min(data_fit_l2)-range, np.max(data_fit_l2)+range)
+    #posx = np.max(nu_GHz)- 3
+    #posy = np.max(data)- 0.025
+    #axs.text(posx, posy, p3c286.getName(), style='italic', bbox={'facecolor': 'white', 'alpha': 0.5, 'pad': 10})
+    plt.savefig('3c286_polanglefit_2.pdf', bbox_inches='tight')
+
+    fig, axs = plt.subplots(1,1)
+    data = p3c286.getPolFrac()
+    data_l2 = data[::-1]
+    #print(p3c286_polangle_coeffs)
+    #axs.plot(JVLA_nu, data_fit, label="Fit", color='red', linewidth=2)
+    axs.plot(lambda2_m, data_l2, label="Data", color='black', linewidth=2)
+    axs.fill_between(l_band_l2, np.min(data_l2), np.max(data_l2), color = 'cyan', alpha = 0.2)
+    #axs.xaxis.set_major_locator(plt.MaxNLocator(8))
+    #axs.yaxis.set_major_locator(plt.MaxNLocator(6))
+    axs.set_ylabel("Degrees")
+    axs.set_xlabel(r'$\lambda^2$ (m$^2$)')
+    axs.grid()
+    axs.legend()
+    axs.set_xlim(np.min(lambda2_m), np.max(lambda2_m))
+    axs.set_ylim(np.min(data_l2), np.max(data_l2))
+    #posx = np.max(nu_GHz)- 3
+    #posy = np.max(data)- 0.025
+    #axs.text(posx, posy, p3c286.getName(), style='italic', bbox={'facecolor': 'white', 'alpha': 0.5, 'pad': 10})
+    plt.savefig('3c286_polfracfit.pdf', bbox_inches='tight')
+
+    range = 1e-2
+    fig, axs = plt.subplots(1,1)
+    #print(p3c286_polangle_coeffs)
+    data_fit = plot_pol_function_p3c286.f_eval(nu_GHz[l_band_idx], p3c286_polfrac_coeffs)
+    data_fit_l2 = data_fit[::-1]
+    print(data_fit_l2)
+    axs.plot(l_band_l2, data_fit_l2, label="Fit", color='red', linewidth=2)
+    axs.plot(lambda2_m, data_l2, label="Data", color='black', linewidth=2)
+    axs.fill_between(l_band_l2, np.min(data_l2), np.max(data_l2), color = 'cyan', alpha = 0.2)
+    #axs.xaxis.set_major_locator(plt.MaxNLocator(8))
+    #axs.yaxis.set_major_locator(plt.MaxNLocator(6))
+    axs.set_ylabel("Degrees")
+    axs.set_xlabel(r'$\lambda^2$ (m$^2$)')
+    axs.grid()
+    axs.legend()
+    axs.set_xlim(np.min(l_band_l2), np.max(l_band_l2))
+    axs.set_ylim(np.min(data_fit_l2)-range, np.max(data_fit_l2)+range)
+    #posx = np.max(nu_GHz)- 3
+    #posy = np.max(data)- 0.025
+    #axs.text(posx, posy, p3c286.getName(), style='italic', bbox={'facecolor': 'white', 'alpha': 0.5, 'pad': 10})
+    plt.savefig('3c286_polfracfit_2.pdf', bbox_inches='tight')
+
     os.system('rm -rf *.log')
     os.system('rm -rf *.last')
