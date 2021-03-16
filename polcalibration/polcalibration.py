@@ -211,20 +211,13 @@ class PolCalibration(object):
             spw = str(firstspw)+'~'+str(lastspw)
 
         spwmap0 = [self.mapped_spw] * self.nspw
-        print("Spwmap0 ", spwmap0)
 
-        spwmap = []
-        spwmap_empty = []
         if(len(gaintable)-1 > 0):
-            print("Enter if, len gaintable", len(gaintable))
             spwmap_empty = [[]] * (len(gaintable)-1) #subtract kcrosstable
-            print("Spwmap: ", spwmap_empty)
-            spwmap=spwmap_empty.insert(0, spwmap0)
-            print("Spwmap: ", spwmap)
+            spwmap_empty.insert(0, spwmap0)
+            spwmap = spwmap_empty
         else:
-            print("Enter else, len gaintable", len(gaintable))
             spwmap=[spwmap0]
-            print("Spwmap: ", spwmap)
 
         interp = [interpmode] * len(gaintable)
 
@@ -291,11 +284,10 @@ class PolCalibration(object):
 
         spwmap0 = [self.mapped_spw] * self.nspw
 
-        spwmap = []
-        spwmap_empty = []
         if(len(gaintable)-1 > 0):
             spwmap_empty = [[]] * (len(gaintable)-1) #subtract kcrosstable
-            spwmap=spwmap_empty.insert(0, spwmap0)
+            spwmap_empty.insert(0, spwmap0)
+            spwmap = spwmap_empty
         else:
             spwmap=[spwmap0]
 
@@ -370,13 +362,13 @@ class PolCalibration(object):
 
         interp = [''] * len(gaintable)
         spw = str(firstspw)+'~'+str(lastspw)
+        
         spwmap0 = [self.mapped_spw] * self.nspw
 
-        spwmap = []
-        spwmap_empty = []
         if(len(gaintable)-1 > 0):
             spwmap_empty = [[]] * (len(gaintable)-1) #subtract kcrosstable
-            spwmap=spwmap_empty.insert(0, spwmap0)
+            spwmap_empty.insert(0, spwmap0)
+            spwmap = spwmap_empty
         else:
             spwmap=[spwmap0]
 
