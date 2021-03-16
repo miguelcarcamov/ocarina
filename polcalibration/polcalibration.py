@@ -173,7 +173,7 @@ class PolCalibration(object):
         return caltable
 
 
-    def calibrateLeakage(self, solint='inf', minsnr=3.0, poltype="Df", gaintable=[], gainfield=[], clipmin=0.0, clipmax=0.25, flagclip=True, interpmode='linear', spw=None, field=None):
+    def calibrateLeakage(self, solint='inf', minsnr=3.0, poltype="Df", gaintable=[], gainfield=[], clipmin=0.0, clipmax=0.25, flagclip=True, interpmode='linear', spw="", field=""):
         if(gaintable == []):
             if(self.kcrosstable == ""):
                 gaintable=[]
@@ -191,7 +191,7 @@ class PolCalibration(object):
         self.logger.info("Refant: "+ self.refant)
         self.casalog.post("Refant: "+ self.refant, "INFO")
 
-        if field is None:
+        if field == "":
             caltable = self.vis[:-3]+".D0"
             self.logger.info("Field: "+ self.leakagefield)
             self.casalog.post("Field: "+ self.leakagefield, "INFO")
@@ -207,16 +207,19 @@ class PolCalibration(object):
         firstspw=self.spw_ids[0]
         lastspw=self.spw_ids[-1]
 
-        if spw is None:
+        if spw = "":
             spw = str(firstspw)+'~'+str(lastspw)
 
         spwmap0 = [self.mapped_spw] * self.nspw
 
-        spwmap=[spwmap0] # Default option   
 
+        spwmap = []
+        spwmap_empty = []
         if(len(gaintable)-1 > 0):
             spwmap_empty = [[]] * (len(gaintable)-1) #subtract kcrosstable
             spwmap=spwmap_empty.insert(0, spwmap0)
+        else:
+            spwmap=[spwmap0]
 
         interp = [interpmode] * len(gaintable)
         if(self.old_VLA):
@@ -224,11 +227,11 @@ class PolCalibration(object):
             spwmap = []
             interp='nearest'
 
-        self.logger.info("Spw: ", spw)
-        self.casalog.post("Spw: ", spw, "INFO")
+        self.logger.info("Spw: " + spw)
+        self.casalog.post("Spw: " + spw, "INFO")
         print("Spwmap: ", spwmap)
 
-        if field is None:
+        if field == "":
             polcal(vis=self.vis, caltable=caltable, field=self.leakagefield, spw=spw, refant=self.refant, antenna=self.antennas, poltype=poltype, solint=solint, spwmap=spwmap, combine='scan', interp=interp, minsnr=minsnr, gaintable=gaintable, gainfield=gainfield)
         else:
             polcal(vis=self.vis, caltable=caltable, field=field, spw=spw, refant=self.refant, antenna=self.antennas, poltype=poltype, solint=solint, spwmap=spwmap, combine='scan', interp=interp, minsnr=minsnr, gaintable=gaintable, gainfield=gainfield)
@@ -252,7 +255,7 @@ class PolCalibration(object):
         self.leakagetable = caltable
         return caltable
 
-    def calibratePolAngle(self, solint='inf', minsnr=3.0, poltype="Xf", gaintable=[], gainfield=[], interpmode='linear'):
+    def calibratePolAngle(self, solint='inf', minsnr=3.0, poltype="Xf", gaintable=[], gainfield=[], interpmode='linear', spw="", field=""):
         if(gaintable == []):
             if(self.kcrosstable == ""):
                 gaintable=[self.leakagetable]
@@ -277,14 +280,18 @@ class PolCalibration(object):
         firstspw=self.spw_ids[0]
         lastspw=self.spw_ids[-1]
 
-        spw = str(firstspw)+'~'+str(lastspw)
+        if spw = "":
+            spw = str(firstspw)+'~'+str(lastspw)
+
         spwmap0 = [self.mapped_spw] * self.nspw
 
-        spwmap=[spwmap0] # Default option
-
+        spwmap = []
+        spwmap_empty = []
         if(len(gaintable)-1 > 0):
             spwmap_empty = [[]] * (len(gaintable)-1) #subtract kcrosstable
             spwmap=spwmap_empty.insert(0, spwmap0)
+        else:
+            spwmap=[spwmap0]
 
         interp = [interpmode] * len(gaintable)
         if(self.old_VLA):
@@ -292,10 +299,14 @@ class PolCalibration(object):
             spwmap = []
             interp = 'nearest'
 
-        self.logger.info("Spw: ", spw)
-        self.casalog.post("Spw: ", spw, "INFO")
+        self.logger.info("Spw: " + spw)
+        self.casalog.post("Spw: "+ spw, "INFO")
         print("Spwmap: ", spwmap)
-        polcal(vis=self.vis, caltable=caltable, field=self.polanglefield, spw=spw, refant=self.refant, antenna=self.antennas, poltype=poltype, solint=solint, combine='scan', spwmap=spwmap, interp=interp, minsnr=minsnr, gaintable=gaintable, gainfield=gainfield)
+
+        if field == "":
+            polcal(vis=self.vis, caltable=caltable, field=self.polanglefield, spw=spw, refant=self.refant, antenna=self.antennas, poltype=poltype, solint=solint, combine='scan', spwmap=spwmap, interp=interp, minsnr=minsnr, gaintable=gaintable, gainfield=gainfield)
+        else:
+            polcal(vis=self.vis, caltable=caltable, field=field, spw=spw, refant=self.refant, antenna=self.antennas, poltype=poltype, solint=solint, combine='scan', spwmap=spwmap, interp=interp, minsnr=minsnr, gaintable=gaintable, gainfield=gainfield)
 
         if not os.path.exists(caltable): sys.exit("Caltable was not created and cannot continue. Exiting...")
         plotms(vis=caltable,xaxis='frequency',yaxis='phase',coloraxis='spw', showgui=False, plotfile=self.vis[:-3]+'.X0.phasevsfreq.png', overwrite=True)
@@ -355,10 +366,13 @@ class PolCalibration(object):
         spw = str(firstspw)+'~'+str(lastspw)
         spwmap0 = [self.mapped_spw] * self.nspw
 
-        spwmap=[spwmap0] # Default option
+        spwmap = []
+        spwmap_empty = []
         if(len(gaintable)-1 > 0):
             spwmap_empty = [[]] * (len(gaintable)-1) #subtract kcrosstable
             spwmap=spwmap_empty.insert(0, spwmap0)
+        else:
+            spwmap=[spwmap0]
 
         calwt = [False] * len(gaintable)
         selectdata=True
