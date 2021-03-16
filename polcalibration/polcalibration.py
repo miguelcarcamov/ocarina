@@ -314,11 +314,17 @@ class PolCalibration(object):
         self.polangletable = caltable
         return caltable
 
-    def plotLeakage(self, plotdir=""):
-        plotms(vis=self.leakagetable, xaxis='antenna', yaxis='amp', plotfile=plotdir+self.vis[:-3]+'.D0.amp.png', showgui=False, overwrite=True)
-        plotms(vis=self.leakagetable, xaxis='antenna', yaxis='phase', iteraxis='antenna', plotfile=plotdir+self.vis[:-3]+'.D0.phs.png', showgui=False, overwrite=True)
-        plotms(vis=self.leakagetable, xaxis='antenna', yaxis='snr', showgui=False, plotfile=plotdir+self.vis[:-3]+'.D0.snr.png', overwrite=True)
-        plotms(vis=self.leakagetable, xaxis='real', yaxis='imag', showgui=False, plotfile=plotdir+self.vis[:-3]+'.D0.cmplx.png', overwrite=True)
+    def plotLeakage(self, plotdir="", field="", caltable=""):
+        if field == "" and caltable=="":
+            plotms(vis=self.leakagetable, xaxis='antenna', yaxis='amp', plotfile=plotdir+self.vis[:-3]+'.D0.amp.png', showgui=False, overwrite=True)
+            plotms(vis=self.leakagetable, xaxis='antenna', yaxis='phase', iteraxis='antenna', plotfile=plotdir+self.vis[:-3]+'.D0.phs.png', showgui=False, overwrite=True)
+            plotms(vis=self.leakagetable, xaxis='antenna', yaxis='snr', showgui=False, plotfile=plotdir+self.vis[:-3]+'.D0.snr.png', overwrite=True)
+            plotms(vis=self.leakagetable, xaxis='real', yaxis='imag', showgui=False, plotfile=plotdir+self.vis[:-3]+'.D0.cmplx.png', overwrite=True)
+        else:
+            plotms(vis=caltable, xaxis='antenna', yaxis='amp', plotfile=plotdir+self.vis[:-3]+'.D.'+field+'amp.png', showgui=False, overwrite=True)
+            plotms(vis=caltable, xaxis='antenna', yaxis='phase', iteraxis='antenna', plotfile=plotdir+self.vis[:-3]+'.D.'+field+'phs.png', showgui=False, overwrite=True)
+            plotms(vis=caltable, xaxis='antenna', yaxis='snr', showgui=False, plotfile=plotdir+self.vis[:-3]+'.D.'+field+'snr.png', overwrite=True)
+            plotms(vis=caltable, xaxis='real', yaxis='imag', showgui=False, plotfile=plotdir+self.vis[:-3]+'.D.'+field+'cmplx.png', overwrite=True)
 
     def applySolutions2(self, gainfield=[], applymode="calflagstrict"):
         gaintable=[self.kcrosstable]
