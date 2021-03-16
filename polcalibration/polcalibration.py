@@ -234,7 +234,6 @@ class PolCalibration(object):
         self.logger.info("Spw: " + spw)
         self.casalog.post("Spw: " + spw, "INFO")
         print("Spwmap: ", spwmap)
-        sys.exit(-1)
 
         if field == "":
             polcal(vis=self.vis, caltable=caltable, field=self.leakagefield, spw=spw, refant=self.refant, antenna=self.antennas, poltype=poltype, solint=solint, spwmap=spwmap, combine='scan', interp=interp, minsnr=minsnr, gaintable=gaintable, gainfield=gainfield)
