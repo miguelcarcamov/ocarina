@@ -173,20 +173,18 @@ class PolarizedSource(object):
         return source_func_frac.getCoeffs().tolist()
 
     # Returns pol fraction coeffs
-    def getPolFracCoeffs(self, nu_0=0.0, nterms=3, nu_min=0.0, nu_max=np.inf):
+    def getPolFracCoeffs(self, nterms=3, nu_min=0.0, nu_max=np.inf):
         nu, polfrac = self.filter(self.getNu(), self.getPolFrac(), nu_min, nu_max)
-        if(not nu_0):
-            nu_0 = np.median(nu)
+        nu_0 = np.median(nu)
         ifrac_coeffs = np.random.uniform(0.0, 1.0, nterms)
         source_func_frac = PolFunction(x_0=nu_0, nterms=nterms)
         source_func_frac.fit(nu, polfrac, ifrac_coeffs)
         return source_func_frac.getCoeffs().tolist()
 
     # Returns pol angle coeffs in radians
-    def getPolAngleCoeffs(self, nu_0=0.0, nterms=3, nu_min=0.0, nu_max=np.inf):
+    def getPolAngleCoeffs(self, nterms=3, nu_min=0.0, nu_max=np.inf):
         nu, polangle = self.filter(self.getNu(), self.getPolAngle(), nu_min, nu_max)
-        if(not nu_0):
-            nu_0 = np.median(nu)
+        nu_0 = np.median(nu)
         iangle_coeffs = np.random.uniform(-np.pi, np.pi, nterms)
         source_func_angle = PolFunction(x_0=nu_0, nterms=nterms)
         source_func_angle.fit(nu, polangle, iangle_coeffs)
@@ -199,7 +197,7 @@ class PolarizedSource(object):
         intensity = self.flux_scalar(nu_0/1e9)
         return intensity, spec_idx
 
-    def getSourcePolInformation(self, nu_0=0.0, nterms_angle=3, nterms_frac=3, nu_min=0.0, nu_max=np.inf):
-        pol_frac_coeffs = self.getPolFracCoeffs(nu_0=nu_0, nterms=nterms_frac, nu_min=nu_min, nu_max=nu_max)
-        pol_angle_coeffs = self.getPolAngleCoeffs(nu_0=nu_0, nterms=nterms_angle, nu_min=nu_min, nu_max=nu_max)
+    def getSourcePolInformation(self, nterms_angle=3, nterms_frac=3, nu_min=0.0, nu_max=np.inf):
+        pol_frac_coeffs = self.getPolFracCoeffs(nterms=nterms_frac, nu_min=nu_min, nu_max=nu_max)
+        pol_angle_coeffs = self.getPolAngleCoeffs(nterms=nterms_angle, nu_min=nu_min, nu_max=nu_max)
         return pol_angle_coeffs, pol_frac_coeffs
