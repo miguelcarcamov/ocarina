@@ -31,6 +31,7 @@ class PolarizedSource(object):
         # Pol fraction in percentage to fraction
         self.polfrac /= 100.0
         self.spidx_coeffs = []
+        self.spidx_coeff_errs = []
 
         self.logger = logging.getLogger(self.__class__.__name__)
         self.logger.info("Creating "+self.__class__.__name__)
@@ -148,29 +149,59 @@ class PolarizedSource(object):
 
         return 10.0**flux_at_nu
 
+    def flux_scalar_giving_coeffs(self, nu, coeffs):
+        flux_at_nu = 0.0
+
+        for i in range(len(coeffs)):
+            flux_at_nu += coeffs[i] * (np.log10(nu)**i)
+
+        return 10.0**flux_at_nu
+
+    def flux_giving_coeffs(self, nu, coeffs):
+        flux_at_nu = np.zeros(len(nu))
+
+        for i in range(len(coeffs)):
+            flux_at_nu += coeffs[i] * (np.log10(nu)**i)
+
+        return 10.0**flux_at_nu
+
     def getCoeffs(self, standard="Perley-Butler 2017", epoch="2017"):
         coeff_table = os.getenv('CASAPATH').split(' ')[0] + '/data/nrao/VLA/standards/' + self.spix_dict[standard]
         tb_obj = tb()
         tb_obj.open(coeff_table)
         query_table = tb_obj.taql("select * from "+coeff_table+" where Epoch="+epoch)
         coeffs = query_table.getcol(self.name+"_coeffs").flatten().tolist()
+        coeff_errs = query_table.getcol(self.name+"_coefferrs").flatten().tolist()
         self.spidx_coeffs = coeffs
+        self.spidx_coeff_errs = coeff_errs
         tb_obj.close()
         return coeffs
 
+    def getCoeffErrs(self):
+        return self.spidx_coeff_errs
+
     def setCoeffs(self, coeffs):
         self.spidx_coeffs = coeffs
+
+    def setCoeffErrs(self, err):
+        self.spidx_coeff_errs = err
 
     def fitAlphaBeta(self, nu, nu_0=0.0):
         if(not nu_0):
             nu_0 = np.median(nu)
         flux_0 = self.flux_scalar(nu_0/1e9)
         fluxes = self.flux(nu/1e9)
+        upper_bound = np.array(self.spidx_coeffs) + np.array(self.spidx_coeff_errs)
+        lower_bound = np.array(self.spidx_coeffs) - np.array(self.spidx_coeff_errs)
+        fluxes_upper_bound = self.flux_giving_coeffs(nu/1e9, upper_bound.tolist())
+        fluxes_lower_bound = self.flux_giving_coeffs(nu/1e9, lower_bound.tolist())
+        error_sigma = 0.5*(fluxes_upper_bound - fluxes_lower_bound)
+        if(np.sum(error_sigma) == 0.0): error_sigma = None
 
         i_coeffs = np.random.rand(2)
         source_func_frac = FluxFunction(flux_0=flux_0, xdata=nu, x_0=nu_0)
-        source_func_frac.fit(nu, fluxes, i_coeffs)
-        return source_func_frac.getCoeffs().tolist()
+        source_func_frac.fit(nu, fluxes, i_coeffs, sigma=error_sigma)
+        return source_func_frac.getCoeffs().tolist(), source_func_frac.getCoeffErrs().tolist()
 
     # Returns pol fraction coeffs
     def getPolFracCoeffs(self, nterms=3, nu_min=0.0, nu_max=np.inf):
@@ -179,7 +210,7 @@ class PolarizedSource(object):
         ifrac_coeffs = np.random.uniform(0.0, 1.0, nterms)
         source_func_frac = PolFunction(x_0=nu_0, nterms=nterms)
         source_func_frac.fit(nu, polfrac, ifrac_coeffs)
-        return source_func_frac.getCoeffs().tolist()
+        return source_func_frac.getCoeffs().tolist(), source_func_frac.getCoeffErrs().tolist()
 
     # Returns pol angle coeffs in radians
     def getPolAngleCoeffs(self, nterms=3, nu_min=0.0, nu_max=np.inf):
@@ -188,16 +219,16 @@ class PolarizedSource(object):
         iangle_coeffs = np.random.uniform(-np.pi, np.pi, nterms)
         source_func_angle = PolFunction(x_0=nu_0, nterms=nterms)
         source_func_angle.fit(nu, polangle, iangle_coeffs)
-        return source_func_angle.getCoeffs().tolist()
+        return source_func_angle.getCoeffs().tolist(), source_func_angle.getCoeffErrs().tolist()
 
     def getKnownSourceInformation(self, nu_0=0.0, standard="Perley-Butler 2017", epoch="2017"):
         self.getCoeffs(standard=standard, epoch=epoch)
         nu_fit = np.linspace(0.3275*1e9, 50.0*1e9, 40)
-        spec_idx = self.fitAlphaBeta(nu_fit, nu_0=nu_0)
+        spec_idx, spec_idx_err = self.fitAlphaBeta(nu_fit, nu_0=nu_0)
         intensity = self.flux_scalar(nu_0/1e9)
-        return intensity, spec_idx
+        return intensity, spec_idx, spec_idx_err
 
     def getSourcePolInformation(self, nterms_angle=3, nterms_frac=3, nu_min=0.0, nu_max=np.inf):
-        pol_frac_coeffs = self.getPolFracCoeffs(nterms=nterms_frac, nu_min=nu_min, nu_max=nu_max)
-        pol_angle_coeffs = self.getPolAngleCoeffs(nterms=nterms_angle, nu_min=nu_min, nu_max=nu_max)
-        return pol_angle_coeffs, pol_frac_coeffs
+        pol_frac_coeffs, pol_frac_coeff_errs = self.getPolFracCoeffs(nterms=nterms_frac, nu_min=nu_min, nu_max=nu_max)
+        pol_angle_coeffs, pol_angle_coeff_errs = self.getPolAngleCoeffs(nterms=nterms_angle, nu_min=nu_min, nu_max=nu_max)
+        return pol_angle_coeffs, pol_angle_coeff_errs, pol_frac_coeffs, pol_frac_coeff_errs

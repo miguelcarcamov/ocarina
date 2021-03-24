@@ -120,8 +120,8 @@ class PolCalibration(object):
     def setKnownModel(self, pol_source_object = None, standard="Perley-Butler 2017", field="", epoch="2017", nterms_angle=3, nterms_frac=3, usescratch=False):
 
         # get spectral idx coeffs from VLA tables
-        intensity, spec_idx = pol_source_object.getKnownSourceInformation(nu_0=self.nu_0, standard=standard, epoch=epoch)
-        pol_angle_coeffs, pol_frac_coeffs = pol_source_object.getSourcePolInformation(nterms_angle=nterms_angle, nterms_frac=nterms_frac, nu_min=self.nu_min, nu_max=self.nu_max)
+        intensity, spec_idx, spec_idx_err = pol_source_object.getKnownSourceInformation(nu_0=self.nu_0, standard=standard, epoch=epoch)
+        pol_angle_coeffs, pol_angle_coeff_errs, pol_frac_coeffs, pol_frac_coeff_errs = pol_source_object.getSourcePolInformation(nterms_angle=nterms_angle, nterms_frac=nterms_frac, nu_min=self.nu_min, nu_max=self.nu_max)
         # get intensity in reference frequency
         self.logger.info("Setting model of: "+pol_source_object.getName())
         self.logger.info("Field: "+ field)
@@ -134,8 +134,11 @@ class PolCalibration(object):
         self.casalog.post("I = "+ str(intensity), "INFO")
 
         print("Alpha & Beta: ", spec_idx)
+        print("Error: ", spec_idx_err)
         print("Pol fraction coeffs: ", pol_frac_coeffs)
+        print("Error: ", pol_frac_coeff_errs)
         print("Pol angle coeffs: ", pol_angle_coeffs)
+        print("Error: ", pol_angle_coeff_errs)
         source_dict = setjy(vis=self.vis, field=field, standard='manual', spw='', fluxdensity=[intensity,0,0,0], spix=spec_idx, reffreq=str(self.nu_0/1e9)+"GHz", polindex=pol_frac_coeffs, polangle=pol_angle_coeffs, interpolation="nearest", scalebychan=True, usescratch=usescratch)
         print(source_dict)
         plotms(vis=self.vis, field=field, correlation='RR', timerange='', antenna=self.refant, xaxis='frequency', yaxis='amp', ydatacolumn='model', showgui=False, plotfile=field+'_RRamp_model.png', overwrite=True)

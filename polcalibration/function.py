@@ -12,9 +12,13 @@ class Function(object):
         for a_attribute in initlocals.keys():
             setattr(self, a_attribute, initlocals[a_attribute])
         self.coeff = []
+        self.coeff_errs = []
 
     def getCoeffs(self):
         return self.coeff
+
+    def getCoeffErrs(self):
+        return self.coeff_errs
 
     def getxdata(self):
         return self.xdata
@@ -39,12 +43,14 @@ class Function(object):
     def f_eval(self, xdata, coeffs):
         return
 
-    def fit(self, xdata, data, initial_coeffs=None, lowerbound=-np.inf, upperbound=np.inf):
+    def fit(self, xdata, data, initial_coeffs=None, lowerbound=-np.inf, upperbound=np.inf, sigma=None):
         lowerbounds = np.ones(len(initial_coeffs))*lowerbound
         upperbounds = np.ones(len(initial_coeffs))*upperbound
-        popt, pcov = curve_fit(self.f, xdata, data, p0=initial_coeffs, check_finite=True, bounds=(lowerbounds,upperbounds))
+        popt, pcov = curve_fit(self.f, xdata, data, p0=initial_coeffs, check_finite=True, sigma=sigma, bounds=(lowerbounds,upperbounds))
+        perr = np.sqrt(np.diag(pcov))
         self.coeff = popt
-        return popt, pcov
+        self.coeff_errs = perr
+        return popt, perr
 
 class FluxFunction(Function):
     def __init__(self, flux_0=0.0, **kwargs):
