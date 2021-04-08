@@ -147,7 +147,7 @@ class PolCalibration(object):
         plotms(vis=self.vis, field=field, correlation='RL', timerange='', antenna=self.refant, xaxis='frequency', yaxis='phase', ydatacolumn='model', showgui=False, plotfile=field+'_RLphase_model.png', overwrite=True)
 
 
-    def solveCrossHandDelays(self, minsnr=3.0, solint='inf', combine='scan,spw', channels="", refantmode="flex"):
+    def solveCrossHandDelays(self, minsnr=3.0, solint='inf', combine='scan,spw', spw_interval="", channels="", refantmode="flex"):
         self.logger.info("Solving Cross-hand Delays")
         self.logger.info("Vis: "+ self.vis)
         self.logger.info("Field: "+ self.polanglefield)
@@ -162,10 +162,16 @@ class PolCalibration(object):
         firstspw=self.spw_ids[0]
         lastspw=self.spw_ids[-1]
 
-        if(channels==""):
-            spw =str(firstspw)+'~'+str(lastspw)
+        if spw_interval == "":
+            if channels == "":
+                spw = str(firstspw)+'~'+str(lastspw)
+            else:
+                spw = str(firstspw)+'~'+str(lastspw)+':'+channels
         else:
-            spw =str(firstspw)+'~'+str(lastspw)+':'+channels
+            if channels != "":
+                spw = spw_interval+':'+channels
+            else:
+                spw = spw_interval
 
         self.logger.info("Spw: " + spw)
         self.casalog.post("Spw: " + spw, "INFO")
