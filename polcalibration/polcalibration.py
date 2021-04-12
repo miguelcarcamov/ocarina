@@ -247,6 +247,10 @@ class PolCalibration(object):
 
         if not os.path.exists(caltable): sys.exit("Caltable was not created and cannot continue. Exiting...")
 
+        if(flagclip):
+            flagdata(vis=caltable, mode='clip', correlation='ABS_ALL', clipminmax=[clipmin, clipmax], datacolumn='CPARAM', clipoutside=True, action='apply', flagbackup=False, savepars=False)
+            flagmanager(vis=caltable, mode="save", versionname="clip_flagging", comment="Clip flagging outside ["+str(clipmin)+","+str(clipmax)+"]")
+
         plotms(vis=caltable,xaxis='freq',yaxis='amp',
        iteraxis='antenna',coloraxis='corr', showgui=False, plotfile=self.vis[:-3]+'.D0.ampvsfreq.png', overwrite=True)
 
@@ -257,9 +261,6 @@ class PolCalibration(object):
                iteraxis='antenna',coloraxis='corr',plotrange=[-1,-1,-180,180], showgui=False, plotfile=self.vis[:-3]+'.D0.ampvsantenna.png', overwrite=True)
 
         plotms(vis=caltable,xaxis='antenna1',yaxis='amp',coloraxis='corr', showgui=False, plotfile=self.vis[:-3]+'.D0.ampvsantenna1.png', overwrite=True)
-
-        if(flagclip):
-            flagdata(vis=caltable, mode='clip', correlation='ABS_ALL', clipminmax=[clipmin, clipmax], datacolumn='CPARAM', clipoutside=True, action='apply', flagbackup=False, savepars=False)
 
         self.leakagetable = caltable
         return caltable
