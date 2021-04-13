@@ -11,6 +11,7 @@ from fluxscale import fluxscale
 from rmtables import rmtables
 from plotms import plotms
 from flagdata import flagdata
+from flagmanager import flagmanager
 from utils import queryTable
 from __casac__.logsink import logsink
 
