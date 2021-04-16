@@ -88,7 +88,7 @@ class PolCalibration(object):
         return self.polangletable
 
     def setKcrossTable(self, kcrosstable=""):
-        self.kcrosstable
+        self.kcrosstable = kcrosstable
 
     def setLeakageTable(self, leakagetable=""):
         self.leakagetable = leakagetable
