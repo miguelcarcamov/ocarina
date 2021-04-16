@@ -78,6 +78,24 @@ class PolCalibration(object):
     def setAntennas(self, antennas=""):
         self.antennas = antennas
 
+    def getKcrossTable(self):
+        return self.kcrosstable
+
+    def getLeakageTable(self):
+        return self.leakagetable
+
+    def getPolAngleTable(self):
+        return self.polangletable
+
+    def setKcrossTable(self, kcrosstable=""):
+        self.kcrosstable
+
+    def setLeakageTable(self, leakagetable=""):
+        self.leakagetable = leakagetable
+
+    def setPolAngleTable(self, polangletable=""):
+        self.polangletable = polangletable
+
     def setUnknownModel(self, pol_source_object=None, field="", gaintable="", referencefield="", transferfield="", fitorder=1, usescratch=False):
 
         field_table = queryTable(table=self.vis, query="SELECT NAME FROM "+self.vis+"/FIELD")
