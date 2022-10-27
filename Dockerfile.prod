@@ -1,0 +1,10 @@
+FROM ghcr.io/miguelcarcamov/ocarina:base
+
+RUN python3 --version
+RUN pip3 --version
+RUN echo "Installing ocarina"
+RUN pip3 install git+https://github.com/miguelcarcamov/ocarina.git
+RUN echo "Hello from ocarina production image"
+LABEL org.opencontainers.image.source="https://github.com/miguelcarcamov/ocarina"
+LABEL org.opencontainers.image.description="Container image for OCARINA"
+LABEL org.opencontainers.image.licenses=GPL3

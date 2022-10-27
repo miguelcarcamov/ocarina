@@ -1,2 +1,2 @@
-# polcal_scripts
-Generalized polarization calibration scripts
+# OCARINA
+An object oriented pOlarization CAlibRatIoN frAmework 
