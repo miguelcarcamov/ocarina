@@ -154,7 +154,7 @@ class PolCalibration(ABCMeta):
 
         # From fluxscale documentation we know that coefficients are
         # returned from the natural log nu/nu_0 Taylor expansion
-        fluxdict = fluxscale(
+        flux_dict = fluxscale(
             vis=self.vis_name,
             fluxtable=flux_table,
             caltable=gain_table,
@@ -162,8 +162,8 @@ class PolCalibration(ABCMeta):
             transfer=transfer_field,
             fitorder=fit_order
         )
-        print(fluxdict)
-        coefficients = np.array(fluxdict[str(field_id)]['spidx'].tolist())
+        print(flux_dict)
+        coefficients = np.array(flux_dict[str(field_id)]['spidx'].tolist())
 
         print(
             "Coefficients: ", coefficients
@@ -369,7 +369,7 @@ class PolCalibration(ABCMeta):
 
         if not spw_map:
             if len(gain_table) - 1 > 0:
-                spw_map_empty = [[]] * (len(gain_table) - 1)  #subtract kcrosstable
+                spw_map_empty = [[]] * (len(gain_table) - 1)  # subtract kcrosstable
                 spw_map_empty.insert(0, spw_map0)
                 spw_map = spw_map_empty
             else:
@@ -517,7 +517,7 @@ class PolCalibration(ABCMeta):
 
         if not spw_map:
             if len(gain_table) - 1 > 0:
-                spw_map_empty = [[]] * (len(gain_table) - 1)  #subtract kcrosstable
+                spw_map_empty = [[]] * (len(gain_table) - 1)  # subtract kcrosstable
                 spw_map_empty.insert(0, spw_map0)
                 spw_map = spw_map_empty
             else:
@@ -637,150 +637,96 @@ class PolCalibration(ABCMeta):
                 overwrite=True
             )
 
-    def applySolutions2(self, gainfield=[], applymode="calflagstrict"):
-        gaintable = [self.kcrosstable]
-        firstspw = self.spw_ids[0]
-        lastspw = self.spw_ids[-1]
-        spw = str(firstspw) + '~' + str(lastspw)
-        self.logger.info("Spw: " + spw)
-        self.casalog.post("Spw: " + spw, "INFO")
-        spwmap0 = [self.mapped_spw] * self.nspw
-        interp = [''] * len(gaintable)
-        calwt = [False] * len(gaintable)
-        if (gainfield == []): gainfield = ['']
-        applycal(
-            vis=self.vis,
-            field='',
-            spw=spw,
-            gaintable=gaintable,
-            spwmap=[spwmap0],
-            calwt=calwt,
-            applymode=applymode,
-            interp=interp,
-            gainfield=gainfield,
-            antenna='*&*',
-            parang=True,
-            flagbackup=True
-        )
-
-    def applySolutions3(self, gainfield=[], applymode="calflagstrict"):
-        gaintable = [self.kcrosstable, self.leakagetable]
-        firstspw = self.spw_ids[0]
-        lastspw = self.spw_ids[-1]
-        spw = str(firstspw) + '~' + str(lastspw)
-        self.logger.info("Spw: " + spw)
-        self.casalog.post("Spw: " + spw, "INFO")
-        spwmap0 = [self.mapped_spw] * self.nspw
-        interp = [''] * len(gaintable)
-        calwt = [False] * len(gaintable)
-        if (gainfield == []): gainfield = ['']
-        applycal(
-            vis=self.vis,
-            field='',
-            spw=spw,
-            gaintable=gaintable,
-            spwmap=[spwmap0],
-            calwt=calwt,
-            applymode=applymode,
-            interp=interp,
-            gainfield=gainfield,
-            antenna='*&*',
-            parang=True,
-            flagbackup=True
-        )
-
-    def applySingleSolution(
+    def apply_single_solution(
         self,
-        field='',
-        spw='',
-        gaintable=[],
-        gainfield=[],
-        selectdata=True,
-        spwmap=[],
-        calwt=[False],
-        applymode="calflagstrict",
-        interp='linear',
-        antenna='',
-        flagbackup=True
+        field: str = '',
+        spw: str = '',
+        gain_table: list = [],
+        gain_field: list = [],
+        select_data: bool = True,
+        spw_map: list = [],
+        cal_wt: list = [False],
+        apply_mode: str = "calflagstrict",
+        interp: str = 'linear',
+        antenna: str = '',
+        flag_backup: bool = True
     ):
         applycal(
-            vis=self.vis,
-            field='',
+            vis=self.vis_name,
+            field=field,
             spw=spw,
-            gaintable=gaintable,
-            gainfield=gainfield,
-            selectdata=selectdata,
-            spwmap=spwmap,
-            calwt=calwt,
-            applymode=applymode,
+            gaintable=gain_table,
+            gainfield=gain_field,
+            selectdata=select_data,
+            spwmap=spw_map,
+            calwt=cal_wt,
+            applymode=apply_mode,
             interp=interp,
             antenna=antenna,
             parang=True,
-            flagbackup=flagbackup
+            flagbackup=flag_backup
         )
 
-    def applySolutions(
+    def apply_solutions(
         self,
-        spwmap=[],
-        gaintable=[],
-        gainfield=[],
-        applymode="calflagstrict",
-        antenna='*&*',
-        flagbackup=True
+        spw_map: list = [],
+        gain_table: list = [],
+        gain_field: list = [],
+        apply_mode: str = "calflagstrict",
+        antenna: str = '*&*',
+        flag_backup: bool = True
     ):
-        #leakagegain.append(fluxtable)
-        if (gaintable == []):
-            if (self.kcrosstable == ""):
-                gaintable = [self.leakagetable, self.polangletable]
+        if not gain_table:
+            if self.k_cross_table == "":
+                gain_table = [self.leakage_table, self.pol_angle_table]
             else:
-                gaintable = [self.kcrosstable, self.leakagetable, self.polangletable]
-        self.logger.info("Applying solutions")
-        self.casalog.post("Applying solutions", "INFO")
-        print("Gain tables: ", gaintable)
-        firstspw = self.spw_ids[0]
-        lastspw = self.spw_ids[-1]
+                gain_table = [self.k_cross_table, self.leakage_table, self.pol_angle_table]
+        print("Applying solutions")
+        print("Gain tables: ", gain_table)
+        first_spw = self.spw_ids[0]
+        last_spw = self.spw_ids[-1]
 
-        interp = [''] * len(gaintable)
-        spw = str(firstspw) + '~' + str(lastspw)
+        interp = [''] * len(gain_table)
+        spw = str(first_spw) + '~' + str(last_spw)
 
-        spwmap0 = [self.mapped_spw] * self.nspw
+        spw_map0 = [self.mapped_spw] * self.number_spectral_windows
 
-        if (spwmap == []):
-            if (len(gaintable) - 1 > 0):
-                spwmap_empty = [[]] * (len(gaintable) - 1)  #subtract kcrosstable
-                spwmap_empty.insert(0, spwmap0)
-                spwmap = spwmap_empty
+        if not spw_map:
+            if len(gain_table) - 1 > 0:
+                spw_map_empty = [[]] * (len(gain_table) - 1)  # subtract kcrosstable
+                spw_map_empty.insert(0, spw_map0)
+                spw_map = spw_map_empty
             else:
-                spwmap = [spwmap0]
+                spw_map = [spw_map0]
 
-        calwt = [False] * len(gaintable)
-        selectdata = True
-        if (self.old_VLA):
+        cal_wt = [False] * len(gain_table)
+        select_data = True
+        if self.old_vla:
             interp = 'nearest'
-            spwmap = []
+            spw_map = []
             spw = ''
-            calwt = [False]
-            selectdata = False
+            cal_wt = [False]
+            select_data = False
             antenna = ''
 
-        self.logger.info("Spw: " + spw)
-        self.casalog.post("Spw: " + spw, "INFO")
-        print("Spwmap: ", spwmap)
-        if (gainfield == []): gainfield = [''] * len(gaintable)
+        print("Spw: " + spw)
+        print("Spwmap: ", spw_map)
+        if not gain_field:
+            gain_field = [''] * len(gain_table)
         applycal(
-            vis=self.vis,
+            vis=self.vis_name,
             field='',
             spw=spw,
-            gaintable=gaintable,
-            selectdata=selectdata,
-            spwmap=spwmap,
-            calwt=calwt,
-            applymode=applymode,
+            gaintable=gain_table,
+            selectdata=select_data,
+            spwmap=spw_map,
+            calwt=cal_wt,
+            applymode=apply_mode,
             interp=interp,
-            gainfield=gainfield,
+            gainfield=gain_field,
             antenna=antenna,
             parang=True,
-            flagbackup=flagbackup
+            flagbackup=flag_backup
         )
 
     def final_plots(self):
