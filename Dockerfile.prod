@@ -6,5 +6,5 @@ RUN echo "Installing ocarina"
 RUN pip3 install git+https://github.com/miguelcarcamov/ocarina.git
 RUN echo "Hello from ocarina production image"
 LABEL org.opencontainers.image.source="https://github.com/miguelcarcamov/ocarina"
-LABEL org.opencontainers.image.description="Container image for OCARINA"
+LABEL org.opencontainers.image.description="Production container image for OCARINA"
 LABEL org.opencontainers.image.licenses=GPL3

@@ -40,5 +40,5 @@ RUN python3 -m pip install --upgrade pip
 RUN python3 -m pip install mpi4py --no-cache-dir
 RUN echo "Hello from OCARINA base image"
 LABEL org.opencontainers.image.source="https://github.com/miguelcarcamov/ocarina"
-LABEL org.opencontainers.image.description="Container image for OCARINA"
+LABEL org.opencontainers.image.description="Base container image for OCARINA"
 LABEL org.opencontainers.image.licenses=GPL3
