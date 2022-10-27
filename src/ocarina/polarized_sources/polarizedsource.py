@@ -1,15 +1,12 @@
 import numpy as np
-import logging
-import os
 from casatools import table
 from dataclasses import dataclass, field
 import astropy.units as un
 from typing import Union
 from astropy.units import Quantity
-from ..utils import query_table
 from abc import ABCMeta
 from casatools import ctsys
-from ..functions import Function, FluxFunction, PolFunction
+from ..functions import FluxFunction, PolFunction
 
 tb = table()
 

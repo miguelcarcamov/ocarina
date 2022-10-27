@@ -1,405 +1,299 @@
 import os
 import sys
 import numpy as np
-import logging
-from polcal import polcal
-from applycal import applycal
-from gaincal import gaincal
-from setjy import setjy
-from fluxscale import fluxscale
-from rmtables import rmtables
-from plotms import plotms
-from flagdata import flagdata
-from flagmanager import flagmanager
-from utils import queryTable
-from __casac__.logsink import logsink
+from dataclasses import dataclass
+from abc import ABCMeta
+from casatasks import polcal, applycal, gaincal, setjy, fluxscale, rmtables, flagdata, flagmanager
+from casaplotms import plotms
+import astropy.units as un
+from astropy.units import Quantity
+from ..utils import query_table
+from ..polarized_sources import PolarizedSource
 
 
-class PolCalibration(object):
+@dataclass(init=True, repr=True)
+class PolCalibration(ABCMeta):
+    vis_name: str = ""
+    spw_ids: np.ndarray = None
+    antennas: str = ""
+    pol_angle_field: str = ""
+    leakage_field: str = ""
+    target: str = ""
+    ref_ant: str = ""
+    k_cross_ref_ant: str = ""
+    mapped_spw: int = 0
+    nu_0: Quantity = None
+    nu_min: Quantity = None
+    nu_max: Quantity = None
+    old_vla: bool = False
+    number_spectral_windows: int = 0
+    k_cross_table: str = ""
+    leakage_table: str = ""
+    pol_angle_table: str = ""
 
-    def __init__(
+    def __post_init__(self):
+
+        if self.nu_0 is None:
+            spw_table = query_table(
+                table_name=self.vis_name,
+                query="SELECT REF_FREQUENCY FROM " + self.vis_name + "/SPECTRAL_WINDOW" +
+                " WHERE !FLAG_ROW"
+            )
+            spw_ref_frequencies = spw_table.getcol("REF_FREQUENCY") * un.Hz
+            self.nu_0 = np.median(spw_ref_frequencies)
+
+        if self.nu_min is None:
+            min_freq = query_table(
+                table_name=self.vis_name,
+                query="SELECT GMIN(CHAN_FREQ) AS FREQ_MIN FROM " + self.vis_name +
+                "/SPECTRAL_WINDOW" + " WHERE !FLAG_ROW"
+            )
+            self.nu_min = min_freq.getcol("FREQ_MIN")[0] * un.Hz
+
+        if self.nu_max is None:
+            max_freq = query_table(
+                table_name=self.vis_name,
+                query="SELECT GMAX(CHAN_FREQ) AS FREQ_MAX FROM " + self.vis_name +
+                "/SPECTRAL_WINDOW" + " WHERE !FLAG_ROW"
+            )
+            self.nu_max = max_freq.getcol("FREQ_MAX")[0] * un.Hz
+
+        if self.spw_ids is None:
+            spw_table = query_table(
+                table_name=self.vis_name,
+                query="SELECT ROWID() AS ROW_ID FROM " + self.vis_name + "/SPECTRAL_WINDOW" +
+                " WHERE !FLAG_ROW"
+            )
+            spw_dict = spw_table.getvarcol("ROW_ID")
+            self.spw_ids = np.array([item for item in spw_dict.values()]).flatten()
+
+        self.number_spectral_windows = len(self.spw_ids)
+        print("Number of spectral windows: " + str(self.number_spectral_windows))
+        print("Reference freq: " + str(self.nu_0))
+        print("Minimum freq: " + str(self.nu_min))
+        print("Maximum freq: " + str(self.nu_max))
+
+    def plot_models(self, field: str = ""):
+        plotms(
+            vis=self.vis_name,
+            field=field,
+            correlation='RR',
+            timerange='',
+            antenna=self.ref_ant,
+            xaxis='frequency',
+            yaxis='amp',
+            ydatacolumn='model',
+            showgui=False,
+            plotfile=field + '_RRamp_model.png',
+            overwrite=True
+        )
+        plotms(
+            vis=self.vis_name,
+            field=field,
+            correlation='RL',
+            timerange='',
+            antenna=self.ref_ant,
+            xaxis='frequency',
+            yaxis='amp',
+            ydatacolumn='model',
+            showgui=False,
+            plotfile=field + '_RLamp_model.png',
+            overwrite=True
+        )
+        plotms(
+            vis=self.vis_name,
+            field=field,
+            correlation='RR',
+            timerange='',
+            antenna=self.ref_ant,
+            xaxis='frequency',
+            yaxis='phase',
+            ydatacolumn='model',
+            showgui=False,
+            plotfile=field + '_RRphase_model.png',
+            overwrite=True
+        )
+        plotms(
+            vis=self.vis_name,
+            field=field,
+            correlation='RL',
+            timerange='',
+            antenna=self.ref_ant,
+            xaxis='frequency',
+            yaxis='phase',
+            ydatacolumn='model',
+            showgui=False,
+            plotfile=field + '_RLphase_model.png',
+            overwrite=True
+        )
+
+    def set_unknown_model(
         self,
-        vis="",
-        spw_ids=np.array([]),
-        antennas="",
-        polanglefield="",
-        leakagefield="",
-        target="",
-        refant="",
-        kcross_refant="",
-        mapped_spw=0,
-        nu_0=None,
-        nu_min=None,
-        nu_max=None,
-        old_VLA=False,
-        level=logging.INFO,
-        **kwargs
-    ):
-        initlocals = locals()
-        initlocals.pop('self')
-        for a_attribute in initlocals.keys():
-            setattr(self, a_attribute, initlocals[a_attribute])
-        self.__dict__.update(kwargs)
-        self.kcrosstable = ''
-        self.leakagetable = ''
-        self.polangletable = ''
-        self.casalog = logsink()
-        self.logger = logging.getLogger(self.__class__.__name__)
-        self.casalog.origin(self.__class__.__name__)
-        self.logger.info("Creating " + self.__class__.__name__)
-        self.casalog.post("Creating " + self.__class__.__name__, "INFO")
-
-        if (self.nu_0 == None):
-            spw_table = queryTable(
-                table=self.vis,
-                query="SELECT REF_FREQUENCY FROM " + self.vis + "/SPECTRAL_WINDOW" +
-                " WHERE !FLAG_ROW"
-            )
-            spw_reffreqs = spw_table.getcol("REF_FREQUENCY")
-            self.nu_0 = np.median(spw_reffreqs)
-
-        if (self.nu_min == None):
-            min_freq = queryTable(
-                table=self.vis,
-                query="SELECT GMIN(CHAN_FREQ) AS FREQ_MIN FROM " + self.vis + "/SPECTRAL_WINDOW" +
-                " WHERE !FLAG_ROW"
-            )
-            self.nu_min = min_freq.getcol("FREQ_MIN")[0]
-
-        if (self.nu_max == None):
-            max_freq = queryTable(
-                table=self.vis,
-                query="SELECT GMAX(CHAN_FREQ) AS FREQ_MAX FROM " + self.vis + "/SPECTRAL_WINDOW" +
-                " WHERE !FLAG_ROW"
-            )
-            self.nu_max = max_freq.getcol("FREQ_MAX")[0]
-
-        if (len(self.spw_ids) == 0):
-            spw_table = queryTable(
-                table=self.vis,
-                query="SELECT REF_FREQUENCY FROM " + self.vis + "/SPECTRAL_WINDOW" +
-                " WHERE !FLAG_ROW"
-            )
-            self.spw_ids = spw_table.rownumbers()
-
-        self.nspw = len(self.spw_ids)
-        self.casalog.post("nspw: " + str(self.nspw), "INFO")
-        self.casalog.post("Ref freq: " + str(self.nu_0), "INFO")
-        self.casalog.post("Min freq: " + str(self.nu_min), "INFO")
-        self.casalog.post("Max freq: " + str(self.nu_max), "INFO")
-
-    def getNu_0(self):
-        return self.nu_0
-
-    def getNu_min(self):
-        return self.nu_min
-
-    def getNu_max(self):
-        return self.nu_max
-
-    def getSpwIds(self):
-        return self.spw_ids
-
-    def getMappedSpw(self):
-        return self.mapped_spw
-
-    def setMappedSpw(self, mapped_spw=0):
-        self.mapped_spw = mapped_spw
-
-    def getAntennas(self):
-        return self.antennas
-
-    def setAntennas(self, antennas=""):
-        self.antennas = antennas
-
-    def getKcrossTable(self):
-        return self.kcrosstable
-
-    def getLeakageTable(self):
-        return self.leakagetable
-
-    def getPolAngleTable(self):
-        return self.polangletable
-
-    def setKcrossTable(self, kcrosstable=""):
-        self.kcrosstable = kcrosstable
-
-    def setLeakageTable(self, leakagetable=""):
-        self.leakagetable = leakagetable
-
-    def setPolAngleTable(self, polangletable=""):
-        self.polangletable = polangletable
-
-    def setUnknownModel(
-        self,
-        pol_source_object=None,
-        field="",
-        gaintable="",
-        referencefield="",
-        transferfield="",
-        fitorder=1,
-        usescratch=False
+        pol_source_object: PolarizedSource = None,
+        field: str = "",
+        gain_table: str = "",
+        reference_field: str = "",
+        transfer_field: str = "",
+        fit_order: int = 1,
+        use_scratch: bool = False
     ):
 
-        field_table = queryTable(table=self.vis, query="SELECT NAME FROM " + self.vis + "/FIELD")
+        field_table = query_table(
+            table_name=self.vis_name, query="SELECT NAME FROM " + self.vis_name + "/FIELD"
+        )
         field_ids = field_table.rownumbers()
         fields = field_table.getcol("NAME")
         field_id_query = np.where(fields == field)[0][0]
         field_id = field_ids[field_id_query]
         print("Field " + field + " - ID: " + str(field_id))
         field_table.close()
-        fluxtable = self.vis[:-3] + ".F." + field
-        if os.path.exists(fluxtable): rmtables(fluxtable)
-        # From fluxscale documentation we know that the coefficients are return from the natural log nu/nu_0 Taylor expansion
+        # TODO: get MS string without using slicing
+        flux_table = self.vis_name[:-3] + ".F." + field
+        if os.path.exists(flux_table):
+            rmtables(flux_table)
+
+        # From fluxscale documentation we know that coefficients are
+        # returned from the natural log nu/nu_0 Taylor expansion
         fluxdict = fluxscale(
-            vis=self.vis,
-            fluxtable=fluxtable,
-            caltable=gaintable,
-            reference=referencefield,
-            transfer=transferfield,
-            fitorder=fitorder
+            vis=self.vis_name,
+            fluxtable=flux_table,
+            caltable=gain_table,
+            reference=reference_field,
+            transfer=transfer_field,
+            fitorder=fit_order
         )
         print(fluxdict)
-        coeffs = fluxdict[str(field_id)]['spidx'].tolist()
+        coefficients = np.array(fluxdict[str(field_id)]['spidx'].tolist())
 
-        print("Coeffs: ", coeffs)  # a0 log10(S at nu_0), a1 spectral idx, a2 spectral curvature
-        pol_source_object.setCoeffs(coeffs)
-        intensity = 10.0**(
-            coeffs.pop(0)
-        )  # Extract a0 and make coeffs to have only spectral index and spectral curvature coefficients
-        spec_idx = coeffs
+        print(
+            "Coefficients: ", coefficients
+        )  # a0 log10(S at nu_0), a1 spectral idx, a2 spectral curvature
+        print("a0 log10(S at nu_0), a1 spectral idx, a2 spectral curvature")
+        pol_source_object.coefficients = coefficients
+        # Extract a0 and make coefficients to have only spectral index and spectral curvature coefficients
+        intensity = 10.0**coefficients[0]
+        spectral_index = coefficients[1:-1]
 
-        self.logger.info("Setting model of: " + pol_source_object.getName())
-        self.logger.info("Field: " + field)
-        self.logger.info("Reference freq (GHz): " + str(self.nu_0 / 1e9))
-        self.logger.info("I(nu_0) = " + str(intensity))
+        print("Setting model of: " + pol_source_object.name)
+        print("Field: " + field)
+        print("Reference freq: " + self.nu_0)
+        print("I(nu_0) = " + str(intensity))
 
-        self.casalog.post("Setting model of: " + pol_source_object.getName(), "INFO")
-        self.casalog.post("Field: " + field, "INFO")
-        self.casalog.post("Reference freq (GHz): " + str(self.nu_0 / 1e9), "INFO")
-        self.casalog.post("I(nu_0) = " + str(intensity), "INFO")
+        print("Alpha & Beta: ", spectral_index)
 
-        print("Alpha & Beta: ", spec_idx)
         source_dict = setjy(
-            vis=self.vis,
+            vis=self.vis_name,
             field=field,
             standard='manual',
             spw='',
             fluxdensity=[intensity, 0, 0, 0],
-            spix=spec_idx,
-            reffreq=str(self.nu_0 / 1e9) + "GHz",
+            spix=spectral_index.tolist(),
+            reffreq=str(self.nu_0),
             interpolation="nearest",
             scalebychan=True,
-            usescratch=usescratch
+            usescratch=use_scratch
         )
         print(source_dict)
-        plotms(
-            vis=self.vis,
-            field=field,
-            correlation='RR',
-            timerange='',
-            antenna=self.refant,
-            xaxis='frequency',
-            yaxis='amp',
-            ydatacolumn='model',
-            showgui=False,
-            plotfile=field + '_RRamp_model.png',
-            overwrite=True
-        )
-        plotms(
-            vis=self.vis,
-            field=field,
-            correlation='RL',
-            timerange='',
-            antenna=self.refant,
-            xaxis='frequency',
-            yaxis='amp',
-            ydatacolumn='model',
-            showgui=False,
-            plotfile=field + '_RLamp_model.png',
-            overwrite=True
-        )
-        plotms(
-            vis=self.vis,
-            field=field,
-            correlation='RR',
-            timerange='',
-            antenna=self.refant,
-            xaxis='frequency',
-            yaxis='phase',
-            ydatacolumn='model',
-            showgui=False,
-            plotfile=field + '_RRphase_model.png',
-            overwrite=True
-        )
-        plotms(
-            vis=self.vis,
-            field=field,
-            correlation='RL',
-            timerange='',
-            antenna=self.refant,
-            xaxis='frequency',
-            yaxis='phase',
-            ydatacolumn='model',
-            showgui=False,
-            plotfile=field + '_RLphase_model.png',
-            overwrite=True
-        )
-        return fluxtable
+        self.plot_models(field)
 
-    def setKnownModel(
+        return flux_table
+
+    def set_known_model(
         self,
-        pol_source_object=None,
-        standard="Perley-Butler 2017",
-        field="",
-        epoch="2017",
-        nterms_angle=3,
-        nterms_frac=3,
-        usescratch=False
+        pol_source_object: PolarizedSource = None,
+        standard: str = "Perley-Butler 2017",
+        field: str = "",
+        epoch: str = "2017",
+        n_terms_angle: int = 3,
+        n_terms_frac: int = 3,
+        use_scratch: bool = False
     ):
 
-        # get spectral idx coeffs from VLA tables
-        intensity, spec_idx, spec_idx_err = pol_source_object.getKnownSourceInformation(
+        # get spectral idx coeffs from NRAO VLA tables
+        intensity, spec_idx, spec_idx_err = pol_source_object.get_known_source_information(
             nu_0=self.nu_0, standard=standard, epoch=epoch
         )
-        pol_angle_coeffs, pol_angle_coeff_errs, pol_frac_coeffs, pol_frac_coeff_errs = pol_source_object.getSourcePolInformation(
-            nterms_angle=nterms_angle,
-            nterms_frac=nterms_frac,
+
+        pol_angle_coefficients, pol_angle_coefficients_errors, pol_fraction_coefficients, pol_fraction_coefficients_errors = pol_source_object.get_source_polarization_information(
+            n_terms_angle=n_terms_angle,
+            n_terms_frac=n_terms_frac,
             nu_min=self.nu_min,
             nu_max=self.nu_max
         )
         # get intensity in reference frequency
-        self.logger.info("Setting model of: " + pol_source_object.getName())
-        self.logger.info("Field: " + field)
-        self.logger.info("Reference freq (GHz): " + str(self.nu_0 / 1e9))
-        self.logger.info("I = " + str(intensity))
-
-        self.casalog.post("Setting model of: " + pol_source_object.getName(), "INFO")
-        self.casalog.post("Field: " + field, "INFO")
-        self.casalog.post("Reference freq (GHz): " + str(self.nu_0 / 1e9), "INFO")
-        self.casalog.post("I = " + str(intensity), "INFO")
+        print("Setting model of: " + pol_source_object.name)
+        print("Field: " + field)
+        print("Reference freq: " + str(self.nu_0))
+        print("I = " + str(intensity))
 
         print("Alpha & Beta: ", spec_idx)
         print("Error: ", spec_idx_err)
-        print("Pol fraction coeffs: ", pol_frac_coeffs)
-        print("Error: ", pol_frac_coeff_errs)
-        print("Pol angle coeffs: ", pol_angle_coeffs)
-        print("Error: ", pol_angle_coeff_errs)
+        print("Pol fraction coeffs: ", pol_fraction_coefficients)
+        print("Error: ", pol_fraction_coefficients_errors)
+        print("Pol angle coeffs: ", pol_angle_coefficients)
+        print("Error: ", pol_angle_coefficients_errors)
         source_dict = setjy(
-            vis=self.vis,
+            vis=self.vis_name,
             field=field,
             standard='manual',
             spw='',
             fluxdensity=[intensity, 0, 0, 0],
-            spix=spec_idx,
-            reffreq=str(self.nu_0 / 1e9) + "GHz",
-            polindex=pol_frac_coeffs,
-            polangle=pol_angle_coeffs,
+            spix=spec_idx.tolist(),
+            reffreq=str(self.nu_0),
+            polindex=pol_fraction_coefficients,
+            polangle=pol_angle_coefficients,
             interpolation="nearest",
             scalebychan=True,
-            usescratch=usescratch
+            usescratch=use_scratch
         )
         print(source_dict)
-        plotms(
-            vis=self.vis,
-            field=field,
-            correlation='RR',
-            timerange='',
-            antenna=self.refant,
-            xaxis='frequency',
-            yaxis='amp',
-            ydatacolumn='model',
-            showgui=False,
-            plotfile=field + '_RRamp_model.png',
-            overwrite=True
-        )
-        plotms(
-            vis=self.vis,
-            field=field,
-            correlation='RL',
-            timerange='',
-            antenna=self.refant,
-            xaxis='frequency',
-            yaxis='amp',
-            ydatacolumn='model',
-            showgui=False,
-            plotfile=field + '_RLamp_model.png',
-            overwrite=True
-        )
-        plotms(
-            vis=self.vis,
-            field=field,
-            correlation='RR',
-            timerange='',
-            antenna=self.refant,
-            xaxis='frequency',
-            yaxis='phase',
-            ydatacolumn='model',
-            showgui=False,
-            plotfile=field + '_RRphase_model.png',
-            overwrite=True
-        )
-        plotms(
-            vis=self.vis,
-            field=field,
-            correlation='RL',
-            timerange='',
-            antenna=self.refant,
-            xaxis='frequency',
-            yaxis='phase',
-            ydatacolumn='model',
-            showgui=False,
-            plotfile=field + '_RLphase_model.png',
-            overwrite=True
-        )
+        self.plot_models(field)
 
-    def solveCrossHandDelays(
+    def solve_cross_hands_delay(
         self,
-        minsnr=3.0,
-        solint='inf',
-        combine='scan,spw',
-        spw_interval="",
-        channels="",
-        refantmode="strict"
+        min_snr: float = 3.0,
+        sol_int: str = 'inf',
+        combine: str = 'scan,spw',
+        spw_interval: str = "",
+        channels: str = "",
+        ref_ant_mode: str = "strict"
     ):
-        self.logger.info("Solving Cross-hand Delays")
-        self.logger.info("Vis: " + self.vis)
-        self.logger.info("Field: " + self.polanglefield)
-        self.logger.info("Refant: " + self.refant)
+        print("Solving Cross-hand Delays")
+        print("Vis: " + self.vis_name)
+        print("Field: " + self.pol_angle_field)
+        print("Refant: " + self.ref_ant)
 
-        self.casalog.post("Solving Cross-hand Delays", "INFO")
-        self.casalog.post("Vis: " + self.vis, "INFO")
-        self.casalog.post("Field: " + self.polanglefield, "INFO")
-        self.casalog.post("Refant: " + self.refant, "INFO")
-        caltable = self.vis[:-3] + ".Kcross"
-        if os.path.exists(caltable): rmtables(caltable)
-        firstspw = self.spw_ids[0]
-        lastspw = self.spw_ids[-1]
+        # TODO: Get string before .ms without using slicing
+        cal_table = self.vis[:-3] + ".Kcross"
+        if os.path.exists(cal_table):
+            rmtables(cal_table)
+        first_spw = self.spw_ids[0]
+        last_spw = self.spw_ids[-1]
 
         if spw_interval == "":
             if channels == "":
-                spw = str(firstspw) + '~' + str(lastspw)
+                spw = str(first_spw) + '~' + str(last_spw)
             else:
-                spw = str(firstspw) + '~' + str(lastspw) + ':' + channels
+                spw = str(first_spw) + '~' + str(last_spw) + ':' + channels
         else:
             if channels != "":
                 spw = spw_interval + ':' + channels
             else:
                 spw = spw_interval
 
-        self.logger.info("Spw: " + spw)
-        self.casalog.post("Spw: " + spw, "INFO")
+        print("Spw: " + spw)
+
         gaincal(
-            vis=self.vis,
-            caltable=caltable,
-            field=self.polanglefield,
+            vis=self.vis_name,
+            caltable=cal_table,
+            field=self.pol_angle_field,
             spw=spw,
-            refant=self.kcross_refant,
-            refantmode=refantmode,
+            refant=self.k_cross_ref_ant,
+            refantmode=ref_ant_mode,
             antenna=self.antennas,
-            minsnr=minsnr,
+            minsnr=min_snr,
             gaintype="KCROSS",
-            solint=solint,
+            solint=sol_int,
             combine=combine,
             calmode="ap",
             append=False,
@@ -409,135 +303,117 @@ class PolCalibration(object):
             spwmap=[[]],
             parang=True
         )
-        if not os.path.exists(caltable):
-            sys.exit("Caltable was not created and cannot continue. Exiting...")
+
+        if not os.path.exists(cal_table):
+            raise FileNotFoundError("Caltable was not created and cannot continue. Exiting...")
+
         plotms(
-            vis=caltable,
+            vis=cal_table,
             xaxis='frequency',
             yaxis='delay',
-            antenna=self.kcross_refant,
+            antenna=self.k_cross_ref_ant,
             coloraxis='corr',
             showgui=False,
-            plotfile=self.vis[:-3] + '.freqvsdelayKcross.png',
+            plotfile=self.vis_name[:-3] + '.freqvsdelayKcross.png',
             overwrite=True
         )
-        self.kcrosstable = caltable
-        return caltable
 
-    def calibrateLeakage(
+        self.k_cross_table = cal_table
+        return cal_table
+
+    def calibrate_leakage(
         self,
-        solint='inf',
-        minsnr=3.0,
-        poltype="Df",
-        spwmap=[],
-        gaintable=[],
-        gainfield=[],
-        clipmin=0.0,
-        clipmax=0.25,
-        flagclip=True,
-        interpmode='linear',
-        spw="",
-        field=""
+        sol_int: str = 'inf',
+        min_snr: float = 3.0,
+        pol_type: str = "Df",
+        spw_map: list = [],
+        gain_table: list = [],
+        gain_field: list = [],
+        clip_min: float = 0.0,
+        clip_max: float = 0.25,
+        flag_clip: bool = True,
+        interp_mode: str = 'linear',
+        spw: str = "",
+        field: str = ""
     ):
-        if (gaintable == []):
-            if (self.kcrosstable == ""):
-                gaintable = []
+        if not gain_table:
+            if self.k_cross_table == "":
+                gain_table = []
             else:
-                gaintable = [self.kcrosstable]
-        self.logger.info("Leakage calibration")
-        self.logger.info("Vis: " + self.vis)
+                gain_table = [self.k_cross_table]
+        print("Leakage calibration")
+        print("Vis: " + self.vis_name)
 
-        self.casalog.post("Leakage calibration", "INFO")
-        self.casalog.post("Vis: " + self.vis, "INFO")
-
-        print("Gain tables: ", gaintable)
-        self.logger.info("Refant: " + self.refant)
-        self.casalog.post("Refant: " + self.refant, "INFO")
+        print("Gain tables: ", gain_table)
+        print("Refant: " + self.ref_ant)
 
         if field == "":
-            caltable = self.vis[:-3] + ".D0"
-            self.logger.info("Field: " + self.leakagefield)
-            self.casalog.post("Field: " + self.leakagefield, "INFO")
-            print("Field " + self.leakagefield)
+            cal_table = self.vis_name[:-3] + ".D0"
+            print("Field: " + self.leakage_field)
         else:
-            caltable = self.vis[:-3] + ".D." + field
-            self.logger.info("Field: " + field)
-            self.casalog.post("Field: " + field, "INFO")
+            cal_table = self.vis[:-3] + ".D." + field
             print("Field " + field)
 
-        if (gainfield == []): gainfield = [''] * len(gaintable)
-        if os.path.exists(caltable): rmtables(caltable)
-        firstspw = self.spw_ids[0]
-        lastspw = self.spw_ids[-1]
+        if not gain_field:
+            gain_field = [''] * len(gain_table)
+        if os.path.exists(cal_table):
+            rmtables(cal_table)
+
+        first_spw = self.spw_ids[0]
+        last_spw = self.spw_ids[-1]
 
         if spw == "":
-            spw = str(firstspw) + '~' + str(lastspw)
+            spw = str(first_spw) + '~' + str(last_spw)
 
-        spwmap0 = [self.mapped_spw] * self.nspw
+        spw_map0 = [self.mapped_spw] * self.number_spectral_windows
 
-        if (spwmap == []):
-            if (len(gaintable) - 1 > 0):
-                spwmap_empty = [[]] * (len(gaintable) - 1)  #subtract kcrosstable
-                spwmap_empty.insert(0, spwmap0)
-                spwmap = spwmap_empty
+        if not spw_map:
+            if len(gain_table) - 1 > 0:
+                spw_map_empty = [[]] * (len(gain_table) - 1)  #subtract kcrosstable
+                spw_map_empty.insert(0, spw_map0)
+                spw_map = spw_map_empty
             else:
-                spwmap = [spwmap0]
+                spw_map = [spw_map0]
 
-        interp = [interpmode] * len(gaintable)
+        interp = [interp_mode] * len(gain_table)
 
-        if (self.old_VLA):
+        if self.old_vla:
             spw = ''
-            spwmap = []
+            spw_map = []
             interp = 'nearest'
 
-        self.logger.info("Spw: " + spw)
-        self.casalog.post("Spw: " + spw, "INFO")
-        print("Spwmap: ", spwmap)
+        print("Spw: " + spw)
+        print("Spwmap: ", spw_map)
 
         if field == "":
-            polcal(
-                vis=self.vis,
-                caltable=caltable,
-                field=self.leakagefield,
-                spw=spw,
-                refant=self.refant,
-                antenna=self.antennas,
-                poltype=poltype,
-                solint=solint,
-                spwmap=spwmap,
-                combine='scan',
-                interp=interp,
-                minsnr=minsnr,
-                gaintable=gaintable,
-                gainfield=gainfield
-            )
-        else:
-            polcal(
-                vis=self.vis,
-                caltable=caltable,
-                field=field,
-                spw=spw,
-                refant=self.refant,
-                antenna=self.antennas,
-                poltype=poltype,
-                solint=solint,
-                spwmap=spwmap,
-                combine='scan',
-                interp=interp,
-                minsnr=minsnr,
-                gaintable=gaintable,
-                gainfield=gainfield
-            )
+            field = self.leakage_field
 
-        if not os.path.exists(caltable):
-            sys.exit("Caltable was not created and cannot continue. Exiting...")
+        polcal(
+            vis=self.vis_name,
+            caltable=cal_table,
+            field=field,
+            spw=spw,
+            refant=self.ref_ant,
+            antenna=self.antennas,
+            poltype=pol_type,
+            solint=sol_int,
+            spwmap=spw_map,
+            combine='scan',
+            interp=interp,
+            minsnr=min_snr,
+            gaintable=gain_table,
+            gainfield=gain_field
+        )
 
-        if (flagclip):
+        if not os.path.exists(cal_table):
+            raise FileNotFoundError("Caltable was not created and cannot continue. Exiting...")
+
+        if flag_clip:
             flagdata(
-                vis=caltable,
+                vis=cal_table,
                 mode='clip',
                 correlation='ABS_ALL',
-                clipminmax=[clipmin, clipmax],
+                clipminmax=[clip_min, clip_max],
                 datacolumn='CPARAM',
                 clipoutside=True,
                 action='apply',
@@ -545,236 +421,219 @@ class PolCalibration(object):
                 savepars=False
             )
             flagmanager(
-                vis=caltable,
+                vis=cal_table,
                 mode="save",
                 versionname="clip_flagging",
-                comment="Clip flagging outside [" + str(clipmin) + "," + str(clipmax) + "]"
+                comment="Clip flagging outside [" + str(clip_min) + "," + str(clip_max) + "]"
             )
 
         plotms(
-            vis=caltable,
+            vis=cal_table,
             xaxis='freq',
             yaxis='amp',
             iteraxis='antenna',
             coloraxis='corr',
             showgui=False,
-            plotfile=self.vis[:-3] + '.D0.ampvsfreq.png',
+            plotfile=self.vis_name[:-3] + '.D0.ampvsfreq.png',
             overwrite=True
         )
 
         plotms(
-            vis=caltable,
+            vis=cal_table,
             xaxis='chan',
             yaxis='phase',
             iteraxis='antenna',
             coloraxis='corr',
             plotrange=[-1, -1, -180, 180],
             showgui=False,
-            plotfile=self.vis[:-3] + '.D0.phasevschan.png',
+            plotfile=self.vis_name[:-3] + '.D0.phasevschan.png',
             overwrite=True
         )
 
         plotms(
-            vis=caltable,
+            vis=cal_table,
             xaxis='chan',
             yaxis='phase',
             iteraxis='antenna',
             coloraxis='corr',
             plotrange=[-1, -1, -180, 180],
             showgui=False,
-            plotfile=self.vis[:-3] + '.D0.ampvsantenna.png',
+            plotfile=self.vis_name[:-3] + '.D0.ampvsantenna.png',
             overwrite=True
         )
 
         plotms(
-            vis=caltable,
+            vis=cal_table,
             xaxis='antenna1',
             yaxis='amp',
             coloraxis='corr',
             showgui=False,
-            plotfile=self.vis[:-3] + '.D0.ampvsantenna1.png',
+            plotfile=self.vis_name[:-3] + '.D0.ampvsantenna1.png',
             overwrite=True
         )
 
-        self.leakagetable = caltable
-        return caltable
+        self.leakage_table = cal_table
+        return cal_table
 
-    def calibratePolAngle(
+    def calibrate_pol_angle(
         self,
-        solint='inf',
-        minsnr=3.0,
-        poltype="Xf",
-        spwmap=[],
-        gaintable=[],
-        gainfield=[],
-        interpmode='linear',
-        spw="",
-        field=""
+        sol_int: str = 'inf',
+        min_snr: float = 3.0,
+        pol_type: str = "Xf",
+        spw_map: list = [],
+        gain_table: list = [],
+        gain_field: list = [],
+        interp_mode: str = 'linear',
+        spw: str = "",
+        field: str = ""
     ):
-        if (gaintable == []):
-            if (self.kcrosstable == ""):
-                gaintable = [self.leakagetable]
+        if not gain_table:
+            if self.k_cross_table == "":
+                gain_table = [self.leakage_table]
             else:
-                gaintable = [self.kcrosstable, self.leakagetable]
-        self.logger.info("Polarization angle calibration")
-        self.logger.info("Vis: " + self.vis)
-        self.logger.info("Field: " + self.polanglefield)
+                gain_table = [self.k_cross_table, self.leakage_table]
+        print("Polarization angle calibration")
+        print("Vis: " + self.vis_name)
+        print("Field: " + self.pol_angle_field)
 
-        self.casalog.post("Polarization angle calibration", "INFO")
-        self.casalog.post("Vis: " + self.vis, "INFO")
-        self.casalog.post("Field: " + self.polanglefield, "INFO")
+        print("Gain tables: ", gain_table)
 
-        print("Gain tables: ", gaintable)
+        print("Refant: " + self.ref_ant)
 
-        self.logger.info("Refant: " + self.refant)
-        self.casalog.post("Refant: " + self.refant, "INFO")
+        # TODO: fix string
+        cal_table = self.vis_name[:-3] + ".X0"
+        if not gain_field:
+            gain_field = [''] * len(gain_table)
 
-        caltable = self.vis[:-3] + ".X0"
-        if (gainfield == []): gainfield = [''] * len(gaintable)
-        if os.path.exists(caltable): rmtables(caltable)
-        firstspw = self.spw_ids[0]
-        lastspw = self.spw_ids[-1]
+        if os.path.exists(cal_table):
+            rmtables(cal_table)
+        first_spw = self.spw_ids[0]
+        last_spw = self.spw_ids[-1]
 
         if spw == "":
-            spw = str(firstspw) + '~' + str(lastspw)
+            spw = str(first_spw) + '~' + str(last_spw)
 
-        spwmap0 = [self.mapped_spw] * self.nspw
+        spw_map0 = [self.mapped_spw] * self.number_spectral_windows
 
-        if (spwmap == []):
-            if (len(gaintable) - 1 > 0):
-                spwmap_empty = [[]] * (len(gaintable) - 1)  #subtract kcrosstable
-                spwmap_empty.insert(0, spwmap0)
-                spwmap = spwmap_empty
+        if not spw_map:
+            if len(gain_table) - 1 > 0:
+                spw_map_empty = [[]] * (len(gain_table) - 1)  #subtract kcrosstable
+                spw_map_empty.insert(0, spw_map0)
+                spw_map = spw_map_empty
             else:
-                spwmap = [spwmap0]
+                spw_map = [spw_map0]
 
-        interp = [interpmode] * len(gaintable)
-        if (self.old_VLA):
+        interp = [interp_mode] * len(gain_table)
+        if self.old_vla:
             spw = ''
-            spwmap = []
+            spw_map = []
             interp = 'nearest'
 
-        self.logger.info("Spw: " + spw)
-        self.casalog.post("Spw: " + spw, "INFO")
-        print("Spwmap: ", spwmap)
+        print("Spw: " + spw)
+        print("Spwmap: ", spw_map)
 
         if field == "":
-            polcal(
-                vis=self.vis,
-                caltable=caltable,
-                field=self.polanglefield,
-                spw=spw,
-                refant=self.refant,
-                antenna=self.antennas,
-                poltype=poltype,
-                solint=solint,
-                combine='scan',
-                spwmap=spwmap,
-                interp=interp,
-                minsnr=minsnr,
-                gaintable=gaintable,
-                gainfield=gainfield
-            )
-        else:
-            polcal(
-                vis=self.vis,
-                caltable=caltable,
-                field=field,
-                spw=spw,
-                refant=self.refant,
-                antenna=self.antennas,
-                poltype=poltype,
-                solint=solint,
-                combine='scan',
-                spwmap=spwmap,
-                interp=interp,
-                minsnr=minsnr,
-                gaintable=gaintable,
-                gainfield=gainfield
-            )
+            field = self.pol_angle_field
 
-        if not os.path.exists(caltable):
+        polcal(
+            vis=self.vis_name,
+            caltable=cal_table,
+            field=field,
+            spw=spw,
+            refant=self.ref_ant,
+            antenna=self.antennas,
+            poltype=pol_type,
+            solint=sol_int,
+            combine='scan',
+            spwmap=spw_map,
+            interp=interp,
+            minsnr=min_snr,
+            gaintable=gain_table,
+            gainfield=gain_field
+        )
+
+        if not os.path.exists(cal_table):
             sys.exit("Caltable was not created and cannot continue. Exiting...")
         plotms(
-            vis=caltable,
+            vis=cal_table,
             xaxis='frequency',
             yaxis='phase',
             coloraxis='spw',
             showgui=False,
-            plotfile=self.vis[:-3] + '.X0.phasevsfreq.png',
+            plotfile=self.vis_name[:-3] + '.X0.phasevsfreq.png',
             overwrite=True
         )
 
-        self.polangletable = caltable
-        return caltable
+        self.pol_angle_table = cal_table
+        return cal_table
 
-    def plotLeakage(self, plotdir="", field="", caltable=""):
-        if field == "" and caltable == "":
+    def plot_leakage(self, plot_dir="", field="", cal_table=""):
+        if field == "" and cal_table == "":
             plotms(
-                vis=self.leakagetable,
+                vis=self.leakage_table,
                 xaxis='antenna',
                 yaxis='amp',
-                plotfile=plotdir + self.vis[:-3] + '.D0.amp.png',
+                plotfile=plot_dir + self.vis_name[:-3] + '.D0.amp.png',
                 showgui=False,
                 overwrite=True
             )
             plotms(
-                vis=self.leakagetable,
+                vis=self.leakage_table,
                 xaxis='antenna',
                 yaxis='phase',
                 iteraxis='antenna',
-                plotfile=plotdir + self.vis[:-3] + '.D0.phs.png',
+                plotfile=plot_dir + self.vis_name[:-3] + '.D0.phs.png',
                 showgui=False,
                 overwrite=True
             )
             plotms(
-                vis=self.leakagetable,
+                vis=self.leakage_table,
                 xaxis='antenna',
                 yaxis='snr',
                 showgui=False,
-                plotfile=plotdir + self.vis[:-3] + '.D0.snr.png',
+                plotfile=plot_dir + self.vis_name[:-3] + '.D0.snr.png',
                 overwrite=True
             )
             plotms(
-                vis=self.leakagetable,
+                vis=self.leakage_table,
                 xaxis='real',
                 yaxis='imag',
                 showgui=False,
-                plotfile=plotdir + self.vis[:-3] + '.D0.cmplx.png',
+                plotfile=plot_dir + self.vis_name[:-3] + '.D0.cmplx.png',
                 overwrite=True
             )
         else:
             plotms(
-                vis=caltable,
+                vis=cal_table,
                 xaxis='antenna',
                 yaxis='amp',
-                plotfile=plotdir + self.vis[:-3] + '.D.' + field + 'amp.png',
+                plotfile=plot_dir + self.vis_name[:-3] + '.D.' + field + 'amp.png',
                 showgui=False,
                 overwrite=True
             )
             plotms(
-                vis=caltable,
+                vis=cal_table,
                 xaxis='antenna',
                 yaxis='phase',
                 iteraxis='antenna',
-                plotfile=plotdir + self.vis[:-3] + '.D.' + field + 'phs.png',
+                plotfile=plot_dir + self.vis_name[:-3] + '.D.' + field + 'phs.png',
                 showgui=False,
                 overwrite=True
             )
             plotms(
-                vis=caltable,
+                vis=cal_table,
                 xaxis='antenna',
                 yaxis='snr',
                 showgui=False,
-                plotfile=plotdir + self.vis[:-3] + '.D.' + field + 'snr.png',
+                plotfile=plot_dir + self.vis_name[:-3] + '.D.' + field + 'snr.png',
                 overwrite=True
             )
             plotms(
-                vis=caltable,
+                vis=cal_table,
                 xaxis='real',
                 yaxis='imag',
                 showgui=False,
-                plotfile=plotdir + self.vis[:-3] + '.D.' + field + 'cmplx.png',
+                plotfile=plot_dir + self.vis_name[:-3] + '.D.' + field + 'cmplx.png',
                 overwrite=True
             )
 
@@ -924,10 +783,10 @@ class PolCalibration(object):
             flagbackup=flagbackup
         )
 
-    def finalPlots(self):
+    def final_plots(self):
         plotms(
-            vis=self.vis,
-            field=self.polanglefield,
+            vis=self.vis_name,
+            field=self.pol_angle_field,
             correlation='',
             timerange='',
             antenna='',
@@ -936,14 +795,14 @@ class PolCalibration(object):
             yaxis='amp',
             ydatacolumn='corrected',
             coloraxis='corr',
-            plotfile=self.polanglefield + '.corrected-amp.png',
+            plotfile=self.pol_angle_field + '.corrected-amp.png',
             showgui=False,
             overwrite=True
         )
 
         plotms(
-            vis=self.vis,
-            field=self.polanglefield,
+            vis=self.vis_name,
+            field=self.pol_angle_field,
             correlation='',
             timerange='',
             antenna='',
@@ -953,14 +812,14 @@ class PolCalibration(object):
             ydatacolumn='corrected',
             plotrange=[-1, -1, -180, 180],
             coloraxis='corr',
-            plotfile=self.polanglefield + '.corrected-phase.png',
+            plotfile=self.pol_angle_field + '.corrected-phase.png',
             showgui=False,
             overwrite=True
         )
 
         plotms(
-            vis=self.vis,
-            field=self.leakagefield,
+            vis=self.vis_name,
+            field=self.leakage_field,
             correlation='',
             timerange='',
             antenna='',
@@ -969,14 +828,14 @@ class PolCalibration(object):
             yaxis='amp',
             ydatacolumn='corrected',
             coloraxis='corr',
-            plotfile=self.leakagefield + '.corrected-amp.png',
+            plotfile=self.leakage_field + '.corrected-amp.png',
             showgui=False,
             overwrite=True
         )
 
         plotms(
-            vis=self.vis,
-            field=self.leakagefield,
+            vis=self.vis_name,
+            field=self.leakage_field,
             correlation='RR,LL',
             timerange='',
             antenna='',
@@ -986,7 +845,7 @@ class PolCalibration(object):
             ydatacolumn='corrected',
             plotrange=[-1, -1, -180, 180],
             coloraxis='corr',
-            plotfile=self.leakagefield + '.corrected-phase.png',
+            plotfile=self.leakage_field + '.corrected-phase.png',
             showgui=False,
             overwrite=True
         )
