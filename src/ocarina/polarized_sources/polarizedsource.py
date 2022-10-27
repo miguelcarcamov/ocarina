@@ -12,7 +12,7 @@ tb = table()
 
 
 @dataclass(init=True, repr=True)
-class PolarizedSource(ABCMeta):
+class PolarizedSource(metaclass=ABCMeta):
     # Object that takes information of different known
     # polarized sources from https://science.nrao.edu/facilities/vla/docs/manuals/obsguide/modes/pol
     nu: Quantity = None
@@ -20,7 +20,6 @@ class PolarizedSource(ABCMeta):
     pol_fraction: np.ndarray = None
     spectral_idx_coefficients: np.ndarray = None
     spectral_idx_coefficients_errors: np.ndarray = None
-    name: str = None
     source: str = None
     spix_dict: dict = field(default_factory=dict)
 
@@ -76,7 +75,6 @@ class PolarizedSource(ABCMeta):
                 6.4, 6.9, 7.1, 7.7, 7.8, 7.4, 7.5
             ]
         )
-        self.name = "3C48"
 
     def p3c48_2019(self):
         self.nu = np.array(
@@ -96,7 +94,6 @@ class PolarizedSource(ABCMeta):
         self.pol_fraction = np.array(
             [0.3, 0.5, 0.9, 1.6, 2.9, 4.3, 5.4, 5.4, 5.7, 6.1, 6.3, 6.5, 7.2, 6.4, 6.7, 5.6, 6.8]
         )
-        self.name = "3C48"
 
     def p3c138(self):
         self.nu = np.array(
@@ -117,7 +114,6 @@ class PolarizedSource(ABCMeta):
                 7.9, 7.7, 7.4, 6.7, 6.5, 6.7, 6.6, 6.6, 6.5
             ]
         )
-        self.name = "3C138"
 
     def p3c138_2019(self):
         self.nu = np.array(
@@ -140,7 +136,6 @@ class PolarizedSource(ABCMeta):
                 9.2
             ]
         )
-        self.name = "3C138"
 
     def p3c286(self):
         self.nu = np.array(
@@ -161,7 +156,6 @@ class PolarizedSource(ABCMeta):
                 11.9, 11.9, 12.1, 12.2, 12.5, 12.5, 12.6, 12.6, 13.1, 13.2
             ]
         )
-        self.name = "3C286"
 
     def p3c286_2019(self):
         self.nu = np.array(
@@ -184,7 +178,6 @@ class PolarizedSource(ABCMeta):
                 13.5, 13.4, 14.6
             ]
         )
-        self.name = "3C286"
 
     def p3c147(self):
         self.nu = np.array(
@@ -205,7 +198,6 @@ class PolarizedSource(ABCMeta):
                 2.9, 3.4, 3.5, 3.8, 3.8, 4.4, 5.2
             ]
         )
-        self.name = "3C147"
 
     def p3c147_2019(self):
         self.nu = np.array(
@@ -226,13 +218,11 @@ class PolarizedSource(ABCMeta):
                 6.0
             ]
         )
-        self.name = "3C147"
 
     def init_empty(self):
         self.nu = np.array([]) * un.GHz
         self.pol_angle = np.array([]) * un.deg
         self.pol_fraction = np.array([])
-        self.name = self.source
 
     def is_correct(self):
         if len(self.nu) == len(self.pol_angle) and len(self.nu) == len(self.pol_fraction):
@@ -288,8 +278,8 @@ class PolarizedSource(ABCMeta):
         coefficients_table = ctsys.resolve("nrao/VLA/standards/") + self.spix_dict[standard]
         tb.open(coefficients_table)
         _query_table = tb.taql("select * from " + coefficients_table + " where Epoch=" + epoch)
-        coefficients = _query_table.getcol(self.name + "_coeffs").flatten()
-        coefficients_errs = _query_table.getcol(self.name + "_coefferrs").flatten()
+        coefficients = _query_table.getcol(self.source + "_coeffs").flatten()
+        coefficients_errs = _query_table.getcol(self.source + "_coefferrs").flatten()
         if coefficients.size == 0 or coefficients_errs.size == 0:
             raise ValueError("The selected epoch does not have any data")
 

@@ -7,7 +7,7 @@ from typing import Union
 
 
 @dataclass(init=True, repr=True)
-class Function(ABCMeta):
+class Function(metaclass=ABCMeta):
 
     x_0: Union[float, Quantity] = 0.0
     xdata: Union[np.ndarray, Quantity] = None
