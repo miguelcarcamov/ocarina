@@ -268,10 +268,10 @@ class PolarizedSource(metaclass=ABCMeta):
 
         return 10.0**flux_at_nu
 
-    def flux_scalar(self, nu: float) -> float:
+    def flux_scalar(self, nu: Union[float, Quantity]) -> float:
         return self.flux_scalar_giving_coefficients(nu, self.spectral_idx_coefficients)
 
-    def flux(self, nu: np.ndarray) -> np.ndarray:
+    def flux(self, nu: Union[np.ndarray, Quantity]) -> np.ndarray:
         return self.flux_giving_coefficients(nu, self.spectral_idx_coefficients)
 
     def get_coefficients(self, standard="Perley-Butler 2017", epoch="2017"):
