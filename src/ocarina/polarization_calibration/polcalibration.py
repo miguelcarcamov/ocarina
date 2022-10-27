@@ -12,7 +12,7 @@ from ..polarized_sources import PolarizedSource
 
 
 @dataclass(init=True, repr=True)
-class PolCalibration(ABCMeta):
+class PolarizationCalibration(ABCMeta):
     vis_name: str = ""
     spw_ids: np.ndarray = None
     antennas: str = ""
