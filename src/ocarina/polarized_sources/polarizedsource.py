@@ -304,7 +304,13 @@ class PolarizedSource(metaclass=ABCMeta):
         return source_func_frac.coefficients, source_func_frac.coefficients_errors
 
     # Returns pol fraction coeffs
-    def get_pol_fraction_coefficients(self, n_terms: int = 3, nu_0: [float, Quantity] = None, nu_min: [float, Quantity] = 0.0, nu_max: [float, Quantity] = np.inf):
+    def get_pol_fraction_coefficients(
+        self,
+        n_terms: int = 3,
+        nu_0: [float, Quantity] = None,
+        nu_min: [float, Quantity] = 0.0,
+        nu_max: [float, Quantity] = np.inf
+    ):
         nu, pol_frac = self.filter(self.nu, self.pol_fraction, nu_min, nu_max)
         if nu_0 is None:
             nu_0 = np.median(nu)
@@ -314,7 +320,13 @@ class PolarizedSource(metaclass=ABCMeta):
         return source_func_frac.coefficients, source_func_frac.coefficients_errors
 
     # Returns pol angle coefficients in radians
-    def get_pol_angle_coefficients(self, n_terms: int = 3, nu_0: [float, Quantity] = None, nu_min: [float, Quantity] = 0.0, nu_max: [float, Quantity] = np.inf):
+    def get_pol_angle_coefficients(
+        self,
+        n_terms: int = 3,
+        nu_0: [float, Quantity] = None,
+        nu_min: [float, Quantity] = 0.0,
+        nu_max: [float, Quantity] = np.inf
+    ):
         nu, pol_angle = self.filter(self.nu, self.pol_angle, nu_min, nu_max)
         if nu_0 is None:
             nu_0 = np.median(nu)
