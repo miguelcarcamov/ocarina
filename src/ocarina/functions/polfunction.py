@@ -1,5 +1,6 @@
 from .function import Function
-from dataclasses import dataclass, field
+from astropy.units import Quantity
+from dataclasses import dataclass
 import numpy as np
 
 
@@ -13,13 +14,19 @@ class PolFunction(Function):
             self.coefficients = np.array([])
 
     def f(self, xdata, *args):
-        y = np.zeros_like(xdata)
+        self.check_same_units(xdata)
+        y = np.zeros(xdata.shape)
+        nu_div = (xdata - self.x_0) / self.x_0
         for i in range(0, self.n_terms):
-            y += args[i] * np.power((xdata - self.x_0) / self.x_0, i)
+            y += args[i] * nu_div**i
         return y
 
     def f_eval(self, xdata, coefficients):
-        y = np.zeros(len(xdata))
+        self.check_same_units(xdata)
+        y = np.zeros(xdata.shape)
+        nu_div = ((xdata - self.x_0) / self.x_0)
+        if isinstance(nu_div, Quantity):
+            nu_div = nu_div.value
         for i in range(0, len(coefficients)):
-            y += coefficients[i] * np.power((xdata - self.x_0) / self.x_0, i)
+            y += coefficients[i] * nu_div**i
         return y

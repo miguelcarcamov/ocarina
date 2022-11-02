@@ -19,8 +19,14 @@ class Function(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def f_eval(self, xdata, coefficients):
+    def f_eval(self, xdata: Union[float, Quantity], coefficients):
         pass
+
+    def check_same_units(self, xdata: Union[float, Quantity]):
+        if isinstance(xdata, Quantity) and isinstance(self.x_0, Quantity):
+            if xdata.unit != self.x_0.unit:
+                print("Converting x_0 to {0}".format(xdata.unit))
+                self.x_0 = self.x_0.to(xdata.unit)
 
     def fit(
         self,
@@ -33,6 +39,10 @@ class Function(metaclass=ABCMeta):
     ):
         lower_bounds = np.ones_like(initial_coefficients) * lower_bound
         upper_bounds = np.ones_like(initial_coefficients) * upper_bound
+
+        self.check_same_units(xdata)
+        self.x_0 = self.x_0.value
+
         popt, pcov = curve_fit(
             self.f,
             xdata,

@@ -232,11 +232,8 @@ class PolarizedSource(metaclass=ABCMeta):
 
     # Returns values in an array lower than a certain frequency
     @staticmethod
-    def filter(nu, data, nu_min: float = 0.0, nu_max: float = np.inf):
-        nu_values = nu
-        if isinstance(nu, Quantity):
-            nu_values = nu.value
-        valid_indexes = np.where((nu_values >= nu_min) & (nu_values <= nu_max))
+    def filter(nu, data, nu_min: [float, Quantity] = 0.0, nu_max: [float, Quantity] = np.inf):
+        valid_indexes = np.where((nu >= nu_min) & (nu <= nu_max))
         nu = nu[valid_indexes]
         data = data[valid_indexes]
         return nu, data
@@ -307,18 +304,20 @@ class PolarizedSource(metaclass=ABCMeta):
         return source_func_frac.coefficients, source_func_frac.coefficients_errors
 
     # Returns pol fraction coeffs
-    def get_pol_fraction_coefficients(self, n_terms=3, nu_min=0.0, nu_max=np.inf):
+    def get_pol_fraction_coefficients(self, n_terms: int = 3, nu_0: [float, Quantity] = None, nu_min: [float, Quantity] = 0.0, nu_max: [float, Quantity] = np.inf):
         nu, pol_frac = self.filter(self.nu, self.pol_fraction, nu_min, nu_max)
-        nu_0 = np.median(nu)
+        if nu_0 is None:
+            nu_0 = np.median(nu)
         initial_pol_fraction_coefficients = np.random.uniform(0.0, 1.0, n_terms)
         source_func_frac = PolFunction(x_0=nu_0, n_terms=n_terms)
         source_func_frac.fit(nu, pol_frac, initial_pol_fraction_coefficients)
         return source_func_frac.coefficients, source_func_frac.coefficients_errors
 
     # Returns pol angle coefficients in radians
-    def get_pol_angle_coefficients(self, n_terms=3, nu_min=0.0, nu_max=np.inf):
+    def get_pol_angle_coefficients(self, n_terms: int = 3, nu_0: [float, Quantity] = None, nu_min: [float, Quantity] = 0.0, nu_max: [float, Quantity] = np.inf):
         nu, pol_angle = self.filter(self.nu, self.pol_angle, nu_min, nu_max)
-        nu_0 = np.median(nu)
+        if nu_0 is None:
+            nu_0 = np.median(nu)
         initial_pol_angle_coefficients = np.random.uniform(-np.pi, np.pi, n_terms)
         source_func_angle = PolFunction(x_0=nu_0, n_terms=n_terms)
         source_func_angle.fit(nu, pol_angle, initial_pol_angle_coefficients)
