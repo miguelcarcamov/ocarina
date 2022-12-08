@@ -2,6 +2,7 @@ import os
 import sys
 import numpy as np
 from dataclasses import dataclass
+from dataclasses import field as dataclass_field
 from abc import ABCMeta
 from casatasks import polcal, applycal, gaincal, setjy, fluxscale, rmtables, flagdata, flagmanager
 from casaplotms import plotms
@@ -26,7 +27,7 @@ class PolarizationCalibrator(metaclass=ABCMeta):
     nu_min: Quantity = None
     nu_max: Quantity = None
     old_vla: bool = False
-    number_spectral_windows: int = 0
+    number_spectral_windows: int = dataclass_field(init=False, repr=True, default=0)
     k_cross_table: str = ""
     leakage_table: str = ""
     pol_angle_table: str = ""
