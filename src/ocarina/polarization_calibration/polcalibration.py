@@ -169,7 +169,6 @@ class PolarizationCalibrator(metaclass=ABCMeta):
         print(
             "Coefficients: ", coefficients
         )  # a0 log10(S at nu_0), a1 spectral idx, a2 spectral curvature
-        print("a0 log10(S at nu_0), a1 spectral idx, a2 spectral curvature")
         pol_source_object.coefficients = coefficients
         # Extract a0 and make coefficients to have only spectral index and spectral curvature coefficients
         intensity = 10.0**coefficients[0]
