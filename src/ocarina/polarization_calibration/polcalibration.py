@@ -175,7 +175,7 @@ class PolarizationCalibrator(metaclass=ABCMeta):
         intensity = 10.0**coefficients[0]
         spectral_index = coefficients[1:-1]
 
-        print("Setting model of: " + pol_source_object.name)
+        print("Setting model of: " + pol_source_object.source)
         print("Field: " + field)
         print("Reference freq: " + self.nu_0)
         print("I(nu_0) = " + str(intensity))
@@ -222,7 +222,7 @@ class PolarizationCalibrator(metaclass=ABCMeta):
             nu_max=self.nu_max
         )
         # get intensity in reference frequency
-        print("Setting model of: " + pol_source_object.name)
+        print("Setting model of: " + pol_source_object.source)
         print("Field: " + field)
         print("Reference freq: " + str(self.nu_0))
         print("I = " + str(intensity))
