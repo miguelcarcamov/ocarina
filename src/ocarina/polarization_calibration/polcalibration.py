@@ -35,13 +35,13 @@ class PolarizationCalibrator(metaclass=ABCMeta):
     def __post_init__(self):
 
         if self.nu_0 is None:
-            spw_table = query_table(
+            channel_column = query_table(
                 table_name=self.vis_name,
-                query="SELECT REF_FREQUENCY FROM " + self.vis_name + "/SPECTRAL_WINDOW" +
+                query="SELECT CHAN_FREQ FROM " + self.vis_name + "/SPECTRAL_WINDOW" +
                 " WHERE !FLAG_ROW"
             )
-            spw_ref_frequencies = spw_table.getcol("REF_FREQUENCY") * un.Hz
-            self.nu_0 = np.median(spw_ref_frequencies)
+            channel_frequencies = channel_column.getcol("CHAN_FREQ") * un.Hz
+            self.nu_0 = (np.max(channel_frequencies) + np.min(channel_frequencies)) / 2.
 
         if self.nu_min is None:
             min_freq = query_table(
