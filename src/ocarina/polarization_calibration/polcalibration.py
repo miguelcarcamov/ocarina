@@ -70,9 +70,9 @@ class PolarizationCalibrator(metaclass=ABCMeta):
 
         self.number_spectral_windows = len(self.spw_ids)
         print("Number of spectral windows: " + str(self.number_spectral_windows))
-        print("Reference freq: " + str(self.nu_0))
-        print("Minimum freq: " + str(self.nu_min))
-        print("Maximum freq: " + str(self.nu_max))
+        print("Reference freq: {0} GHz".format(self.nu_0.to(un.GHz)))
+        print("Minimum freq: {0} GHz".format(self.nu_min))
+        print("Maximum freq: {0} GHz".format(self.nu_max))
 
     def plot_models(self, field: str = ""):
         plotms(
@@ -176,7 +176,7 @@ class PolarizationCalibrator(metaclass=ABCMeta):
 
         print("Setting model of: " + pol_source_object.source)
         print("Field: " + field)
-        print("Reference freq: " + self.nu_0)
+        print("Reference freq: {0} GHz".format(self.nu_0.to(un.GHz)))
         print("I(nu_0) = " + str(intensity))
 
         print("Alpha & Beta: ", spectral_index)
@@ -223,7 +223,7 @@ class PolarizationCalibrator(metaclass=ABCMeta):
         # get intensity in reference frequency
         print("Setting model of: " + pol_source_object.source)
         print("Field: " + field)
-        print("Reference freq: " + str(self.nu_0))
+        print("Reference freq: {0} GHz".format(self.nu_0.to(un.GHz)))
         print("I = " + str(intensity))
 
         print("Alpha & Beta: ", spec_idx)
