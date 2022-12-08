@@ -172,7 +172,7 @@ class PolarizationCalibrator(metaclass=ABCMeta):
         pol_source_object.coefficients = coefficients
         # Extract a0 and make coefficients to have only spectral index and spectral curvature coefficients
         intensity = 10.0**coefficients[0]
-        spectral_index = coefficients[1:-1]
+        spectral_index = coefficients[1:]
 
         print("Setting model of: " + pol_source_object.source)
         print("Field: " + field)
