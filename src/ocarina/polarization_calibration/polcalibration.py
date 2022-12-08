@@ -264,7 +264,7 @@ class PolarizationCalibrator(metaclass=ABCMeta):
         print("Refant: " + self.ref_ant)
 
         # TODO: Get string before .ms without using slicing
-        cal_table = self.vis[:-3] + ".Kcross"
+        cal_table = self.vis_name[:-3] + ".Kcross"
         if os.path.exists(cal_table):
             rmtables(cal_table)
         first_spw = self.spw_ids[0]
