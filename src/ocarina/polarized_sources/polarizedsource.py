@@ -94,6 +94,7 @@ class PolarizedSource(metaclass=ABCMeta):
         self.pol_fraction = np.array(
             [0.3, 0.5, 0.9, 1.6, 2.9, 4.3, 5.4, 5.4, 5.7, 6.1, 6.3, 6.5, 7.2, 6.4, 6.7, 5.6, 6.8]
         )
+        self.source = "3C48"
 
     def p3c138(self):
         self.nu = np.array(
@@ -136,6 +137,7 @@ class PolarizedSource(metaclass=ABCMeta):
                 9.2
             ]
         )
+        self.source = "3C138"
 
     def p3c286(self):
         self.nu = np.array(
@@ -178,6 +180,7 @@ class PolarizedSource(metaclass=ABCMeta):
                 13.5, 13.4, 14.6
             ]
         )
+        self.source = "3C286"
 
     def p3c147(self):
         self.nu = np.array(
@@ -218,6 +221,7 @@ class PolarizedSource(metaclass=ABCMeta):
                 6.0
             ]
         )
+        self.source = "3C147"
 
     def init_empty(self):
         self.nu = np.array([]) * un.GHz
