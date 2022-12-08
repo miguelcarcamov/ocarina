@@ -556,7 +556,7 @@ class PolarizationCalibrator(metaclass=ABCMeta):
             sys.exit("Caltable was not created and cannot continue. Exiting...")
         plotms(
             vis=cal_table,
-            xaxis='frequency',
+            xaxis='freq',
             yaxis='phase',
             coloraxis='spw',
             showgui=False,
@@ -581,7 +581,6 @@ class PolarizationCalibrator(metaclass=ABCMeta):
                 vis=self.leakage_table,
                 xaxis='antenna',
                 yaxis='phase',
-                iteraxis='antenna',
                 plotfile=plot_dir + self.vis_name[:-3] + '.D0.phs.png',
                 showgui=False,
                 overwrite=True
@@ -615,7 +614,6 @@ class PolarizationCalibrator(metaclass=ABCMeta):
                 vis=cal_table,
                 xaxis='antenna',
                 yaxis='phase',
-                iteraxis='antenna',
                 plotfile=plot_dir + self.vis_name[:-3] + '.D.' + field + 'phs.png',
                 showgui=False,
                 overwrite=True
