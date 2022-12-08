@@ -571,7 +571,7 @@ class PolarizationCalibrator(metaclass=ABCMeta):
         if field == "" and cal_table == "":
             plotms(
                 vis=self.leakage_table,
-                xaxis='antenna',
+                xaxis='antenna1',
                 yaxis='amp',
                 plotfile=plot_dir + self.vis_name[:-3] + '.D0.amp.png',
                 showgui=False,
@@ -579,7 +579,7 @@ class PolarizationCalibrator(metaclass=ABCMeta):
             )
             plotms(
                 vis=self.leakage_table,
-                xaxis='antenna',
+                xaxis='antenna1',
                 yaxis='phase',
                 plotfile=plot_dir + self.vis_name[:-3] + '.D0.phs.png',
                 showgui=False,
@@ -587,7 +587,7 @@ class PolarizationCalibrator(metaclass=ABCMeta):
             )
             plotms(
                 vis=self.leakage_table,
-                xaxis='antenna',
+                xaxis='antenna1',
                 yaxis='snr',
                 showgui=False,
                 plotfile=plot_dir + self.vis_name[:-3] + '.D0.snr.png',
@@ -604,7 +604,7 @@ class PolarizationCalibrator(metaclass=ABCMeta):
         else:
             plotms(
                 vis=cal_table,
-                xaxis='antenna',
+                xaxis='antenna1',
                 yaxis='amp',
                 plotfile=plot_dir + self.vis_name[:-3] + '.D.' + field + 'amp.png',
                 showgui=False,
@@ -612,7 +612,7 @@ class PolarizationCalibrator(metaclass=ABCMeta):
             )
             plotms(
                 vis=cal_table,
-                xaxis='antenna',
+                xaxis='antenna1',
                 yaxis='phase',
                 plotfile=plot_dir + self.vis_name[:-3] + '.D.' + field + 'phs.png',
                 showgui=False,
@@ -620,7 +620,7 @@ class PolarizationCalibrator(metaclass=ABCMeta):
             )
             plotms(
                 vis=cal_table,
-                xaxis='antenna',
+                xaxis='antenna1',
                 yaxis='snr',
                 showgui=False,
                 plotfile=plot_dir + self.vis_name[:-3] + '.D.' + field + 'snr.png',
