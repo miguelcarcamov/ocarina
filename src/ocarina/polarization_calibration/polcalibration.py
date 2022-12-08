@@ -434,6 +434,8 @@ class PolarizationCalibrator(metaclass=ABCMeta):
             iteraxis='antenna',
             coloraxis='corr',
             showgui=False,
+            gridrows=3,
+            gridcols=3,
             plotfile=self.vis_name[:-3] + '.D0.ampvsfreq.png',
             overwrite=True
         )
@@ -444,21 +446,11 @@ class PolarizationCalibrator(metaclass=ABCMeta):
             yaxis='phase',
             iteraxis='antenna',
             coloraxis='corr',
+            gridrows=3,
+            gridcols=3,
             plotrange=[-1, -1, -180, 180],
             showgui=False,
             plotfile=self.vis_name[:-3] + '.D0.phasevschan.png',
-            overwrite=True
-        )
-
-        plotms(
-            vis=cal_table,
-            xaxis='chan',
-            yaxis='phase',
-            iteraxis='antenna',
-            coloraxis='corr',
-            plotrange=[-1, -1, -180, 180],
-            showgui=False,
-            plotfile=self.vis_name[:-3] + '.D0.ampvsantenna.png',
             overwrite=True
         )
 
@@ -468,7 +460,7 @@ class PolarizationCalibrator(metaclass=ABCMeta):
             yaxis='amp',
             coloraxis='corr',
             showgui=False,
-            plotfile=self.vis_name[:-3] + '.D0.ampvsantenna1.png',
+            plotfile=self.vis_name[:-3] + '.D0.ampvsantenna.png',
             overwrite=True
         )
 
