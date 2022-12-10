@@ -358,7 +358,7 @@ class PolarizationCalibrator(metaclass=ABCMeta):
             cal_table = self.vis_name[:-3] + ".D0"
             print("Field: " + self.leakage_field)
         else:
-            cal_table = self.vis[:-3] + ".D." + field
+            cal_table = self.vis_name[:-3] + ".D." + field
             print("Field " + field)
 
         if not gain_field:
