@@ -109,6 +109,7 @@ class PolarizationCalibrator(metaclass=ABCMeta):
             antenna=self.ref_ant,
             xaxis='frequency',
             yaxis='phase',
+            plotrange=[-1, -1, -180, 180],
             ydatacolumn='model',
             showgui=False,
             plotfile=field + '_RRphase_model.png',
@@ -122,6 +123,7 @@ class PolarizationCalibrator(metaclass=ABCMeta):
             antenna=self.ref_ant,
             xaxis='frequency',
             yaxis='phase',
+            plotrange=[-1, -1, -180, 180],
             ydatacolumn='model',
             showgui=False,
             plotfile=field + '_RLphase_model.png',
@@ -144,7 +146,12 @@ class PolarizationCalibrator(metaclass=ABCMeta):
         )
         field_ids = field_table.rownumbers()
         fields = field_table.getcol("NAME")
-        field_id_query = np.where(fields == field)[0][0]
+
+        try:
+            field_id_query = np.where(fields == field)[0][0]
+        except IndexError:
+            raise ValueError("The field you have entered does not exist in the measurement set")
+
         field_id = field_ids[field_id_query]
         print("Field " + field + " - ID: " + str(field_id))
         field_table.close()
@@ -551,6 +558,7 @@ class PolarizationCalibrator(metaclass=ABCMeta):
             xaxis='freq',
             yaxis='phase',
             coloraxis='spw',
+            plotrange=[-1, -1, -180, 180],
             showgui=False,
             plotfile=self.vis_name[:-3] + '.X0.phasevsfreq.png',
             overwrite=True
@@ -573,6 +581,7 @@ class PolarizationCalibrator(metaclass=ABCMeta):
                 vis=self.leakage_table,
                 xaxis='antenna1',
                 yaxis='phase',
+                plotrange=[-1, -1, -180, 180],
                 plotfile=plot_dir + self.vis_name[:-3] + '.D0.phs.png',
                 showgui=False,
                 overwrite=True
@@ -606,6 +615,7 @@ class PolarizationCalibrator(metaclass=ABCMeta):
                 vis=cal_table,
                 xaxis='antenna1',
                 yaxis='phase',
+                plotrange=[-1, -1, -180, 180],
                 plotfile=plot_dir + self.vis_name[:-3] + '.D.' + field + 'phs.png',
                 showgui=False,
                 overwrite=True
