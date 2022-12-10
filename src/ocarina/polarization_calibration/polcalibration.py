@@ -138,7 +138,7 @@ class PolarizationCalibrator(metaclass=ABCMeta):
         reference_field: str = "",
         transfer_field: str = "",
         fit_order: int = 1,
-        use_scratch: bool = False
+        use_scratch: bool = True
     ):
 
         field_table = query_table(
@@ -215,7 +215,7 @@ class PolarizationCalibrator(metaclass=ABCMeta):
         epoch: str = "2017",
         n_terms_angle: int = 3,
         n_terms_frac: int = 3,
-        use_scratch: bool = False
+        use_scratch: bool = True
     ):
 
         # get spectral idx coeffs from NRAO VLA tables
@@ -246,14 +246,25 @@ class PolarizationCalibrator(metaclass=ABCMeta):
             field=field,
             standard='manual',
             spw='',
+            selectdata=False,
+            timerange="",
+            scan="",
+            intent="",
+            observation="",
+            model="",
+            modimage="",
             fluxdensity=[intensity, 0, 0, 0],
             spix=spec_idx.tolist(),
             reffreq=str(self.nu_0),
             polindex=pol_fraction_coefficients,
             polangle=pol_angle_coefficients,
+            rotmeas=0,
+            fluxdict={},
+            useephemdir=False,
             interpolation="nearest",
             scalebychan=True,
-            usescratch=use_scratch
+            usescratch=use_scratch,
+            ismms=False
         )
         print(source_dict)
         self.plot_models(field)
