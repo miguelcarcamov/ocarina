@@ -170,7 +170,6 @@ class PolarizationCalibrator(metaclass=ABCMeta):
             transfer=transfer_field,
             fitorder=fit_order
         )
-        print(flux_dict)
 
         coefficients = flux_dict[str(field_id)]['spidx']
         fit_ref_freq = flux_dict[str(field_id)]['fitRefFreq'] * un.Hz
@@ -178,9 +177,7 @@ class PolarizationCalibrator(metaclass=ABCMeta):
         print(
             "Coefficients: {0}".format(coefficients)
         )  # a0 log10(S at nu_0), a1 spectral idx, a2 spectral curvature
-        print(fit_ref_freq)
 
-        raise ValueError
         pol_source_object.coefficients = coefficients
         # Extract a0 and make coefficients to have only spectral index and spectral curvature coefficients
         intensity = 10.0**coefficients[0]
@@ -188,7 +185,7 @@ class PolarizationCalibrator(metaclass=ABCMeta):
 
         print("Setting model of: " + pol_source_object.source)
         print("Field: " + field)
-        print("Reference freq: {0}".format(self.nu_0.to(un.GHz)))
+        print("Reference freq: {0}".format(fit_ref_freq.to(un.GHz)))
         print("I(nu_0) = " + str(intensity))
 
         print("Alpha & Beta: ", spectral_index)
@@ -200,7 +197,7 @@ class PolarizationCalibrator(metaclass=ABCMeta):
             spw='',
             fluxdensity=[intensity, 0, 0, 0],
             spix=spectral_index.tolist(),
-            reffreq=str(self.nu_0),
+            reffreq=str(fit_ref_freq),
             interpolation="nearest",
             scalebychan=True,
             usescratch=use_scratch
