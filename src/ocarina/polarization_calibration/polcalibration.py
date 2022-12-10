@@ -171,11 +171,16 @@ class PolarizationCalibrator(metaclass=ABCMeta):
             fitorder=fit_order
         )
         print(flux_dict)
-        coefficients = np.array(flux_dict[str(field_id)]['spidx'].tolist())
+
+        coefficients = flux_dict[str(field_id)]['spidx']
+        fit_ref_freq = flux_dict[str(field_id)]['fitRefFreq'] * un.Hz
 
         print(
-            "Coefficients: ", coefficients
+            "Coefficients: {0}".format(coefficients)
         )  # a0 log10(S at nu_0), a1 spectral idx, a2 spectral curvature
+        print(fit_ref_freq)
+
+        raise ValueError
         pol_source_object.coefficients = coefficients
         # Extract a0 and make coefficients to have only spectral index and spectral curvature coefficients
         intensity = 10.0**coefficients[0]
