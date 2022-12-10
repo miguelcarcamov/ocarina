@@ -252,7 +252,6 @@ class PolarizationCalibrator(metaclass=ABCMeta):
             intent="",
             observation="",
             model="",
-            modimage="",
             fluxdensity=[intensity, 0, 0, 0],
             spix=spec_idx.tolist(),
             reffreq=str(self.nu_0).strip(" "),
