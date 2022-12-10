@@ -138,7 +138,8 @@ class PolarizationCalibrator(metaclass=ABCMeta):
         reference_field: str = "",
         transfer_field: str = "",
         fit_order: int = 1,
-        use_scratch: bool = True
+        use_scratch: bool = True,
+        telescope_factor: float = 1.0
     ):
 
         field_table = query_table(
@@ -180,7 +181,7 @@ class PolarizationCalibrator(metaclass=ABCMeta):
 
         pol_source_object.coefficients = coefficients
         # Extract a0 and make coefficients to have only spectral index and spectral curvature coefficients
-        intensity = 10.0**coefficients[0]
+        intensity = 10.0**coefficients[0] * telescope_factor
         spectral_index = coefficients[1:]
 
         print("Setting model of: " + pol_source_object.source)
@@ -215,7 +216,8 @@ class PolarizationCalibrator(metaclass=ABCMeta):
         epoch: str = "2017",
         n_terms_angle: int = 3,
         n_terms_frac: int = 3,
-        use_scratch: bool = True
+        use_scratch: bool = True,
+        telescope_factor: float = 1.0
     ):
 
         # get spectral idx coeffs from NRAO VLA tables
@@ -229,6 +231,8 @@ class PolarizationCalibrator(metaclass=ABCMeta):
             nu_min=self.nu_min,
             nu_max=self.nu_max
         )
+
+        intensity *= telescope_factor
         # get intensity in reference frequency
         print("Setting model of: " + pol_source_object.source)
         print("Field: " + field)
