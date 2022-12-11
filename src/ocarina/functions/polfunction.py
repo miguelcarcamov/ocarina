@@ -17,6 +17,8 @@ class PolFunction(Function):
         self.check_same_units(xdata)
         y = np.zeros(xdata.shape)
         nu_div = (xdata - self.x_0) / self.x_0
+        if isinstance(nu_div, Quantity):
+            nu_div = nu_div.value
         for i in range(0, self.n_terms):
             y += args[i] * nu_div**i
         return y
