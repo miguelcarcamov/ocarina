@@ -44,20 +44,10 @@ class PolarizationCalibrator(metaclass=ABCMeta):
             self.nu_0 = (np.max(channel_frequencies) + np.min(channel_frequencies)) / 2.
 
         if self.nu_min is None:
-            min_freq = query_table(
-                table_name=self.vis_name,
-                query="SELECT GMIN(CHAN_FREQ) AS FREQ_MIN FROM " + self.vis_name +
-                "/SPECTRAL_WINDOW" + " WHERE !FLAG_ROW"
-            )
-            self.nu_min = min_freq.getcol("FREQ_MIN")[0] * un.Hz
+            self.nu_min = 0.0 * un.Hz
 
         if self.nu_max is None:
-            max_freq = query_table(
-                table_name=self.vis_name,
-                query="SELECT GMAX(CHAN_FREQ) AS FREQ_MAX FROM " + self.vis_name +
-                "/SPECTRAL_WINDOW" + " WHERE !FLAG_ROW"
-            )
-            self.nu_max = max_freq.getcol("FREQ_MAX")[0] * un.Hz
+            self.nu_max = np.inf * un.Hz
 
         if self.spw_ids is None:
             spw_table = query_table(
