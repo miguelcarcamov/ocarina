@@ -57,9 +57,6 @@ class PolarizedSource(metaclass=ABCMeta):
         # Pol angle from degrees to radians
         self.pol_angle = self.pol_angle.to(un.rad)
 
-        # Pol fraction in percentage to fraction
-        self.pol_fraction /= 100.0
-
     def p3c48(self):
         self.nu = np.array(
             [
@@ -78,7 +75,7 @@ class PolarizedSource(metaclass=ABCMeta):
                 0.3, 0.5, 0.7, 0.9, 1.4, 2.0, 2.5, 3.2, 3.8, 4.2, 5.2, 5.2, 5.3, 5.4, 6.0, 6.1, 6.4,
                 6.4, 6.9, 7.1, 7.7, 7.8, 7.4, 7.5
             ]
-        )
+        ) / 100.
 
         self.flux_density = np.zeros_like(self.pol_fraction) * un.Jy
 
@@ -104,7 +101,7 @@ class PolarizedSource(metaclass=ABCMeta):
                 5.6, 7.5, 8.4, 9.0, 10.4, 10.7, 10.0, 0.0, 10.0, 10.4, 9.8, 10.0, 10.4, 10.1, 8.4,
                 7.9, 7.7, 7.4, 6.7, 6.5, 6.7, 6.6, 6.6, 6.5
             ]
-        )
+        ) / 100.
         self.flux_density = np.zeros_like(self.pol_fraction) * un.Jy
 
     def p3c138_2019(self):
@@ -129,7 +126,7 @@ class PolarizedSource(metaclass=ABCMeta):
                 8.6, 9.5, 9.9, 10.1, 10.5, 10.8, 10.9, 11.1, 11.3, 11.4, 11.6, 11.7, 11.9, 11.9,
                 11.9, 11.9, 12.1, 12.2, 12.5, 12.5, 12.6, 12.6, 13.1, 13.2
             ]
-        )
+        ) / 100.
         self.flux_density = np.zeros_like(self.pol_fraction) * un.Jy
 
     def p3c286_2019(self):
@@ -154,7 +151,7 @@ class PolarizedSource(metaclass=ABCMeta):
                 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.1, 0.3, 0.3, 0.6, 0.7, 0.8, 2.2, 2.4, 2.7,
                 2.9, 3.4, 3.5, 3.8, 3.8, 4.4, 5.2
             ]
-        )
+        ) / 100.
         self.flux_density = np.zeros_like(self.pol_fraction) * un.Jy
 
     def p3c147_2019(self):
