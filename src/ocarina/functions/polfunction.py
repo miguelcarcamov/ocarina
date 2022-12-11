@@ -14,7 +14,6 @@ class PolFunction(Function):
             self.coefficients = np.array([])
 
     def f(self, xdata, *args):
-        self.check_same_units(xdata)
         y = np.zeros(xdata.shape)
         nu_div = (xdata - self.x_0) / self.x_0
         if isinstance(nu_div, Quantity):

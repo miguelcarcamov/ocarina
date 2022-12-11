@@ -10,7 +10,6 @@ class FluxFunction(Function):
     flux_0: float = 0.0
 
     def f(self, xdata: Union[np.ndarray, Quantity], *args):
-        self.check_same_units(xdata)
         nu_div = xdata / self.x_0
         if isinstance(nu_div, Quantity):
             nu_div = nu_div.value
