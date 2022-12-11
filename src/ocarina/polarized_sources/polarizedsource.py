@@ -192,6 +192,10 @@ class PolarizedSource(metaclass=ABCMeta):
     # Returns values in an array lower than a certain frequency
     @staticmethod
     def filter(nu, data, nu_min: [float, Quantity] = 0.0, nu_max: [float, Quantity] = np.inf):
+        print("Filtering ", nu_min)
+        print("Filtering ", nu_max)
+        print("Filtering ", nu)
+        print("Filtering ", data)
         valid_indexes = np.where((nu >= nu_min) & (nu <= nu_max))
         nu = nu[valid_indexes]
         data = data[valid_indexes]
