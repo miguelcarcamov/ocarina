@@ -282,6 +282,8 @@ class PolarizedSource(metaclass=ABCMeta):
         nu_max: [float, Quantity] = np.inf
     ):
         nu, pol_frac = self.filter(self.nu, self.pol_fraction, nu_min, nu_max)
+        print("In pol fraction coeff ", nu)
+        print("In pol fraction coeff ", pol_frac)
         if nu_0 is None:
             nu_0 = (np.max(nu) + np.min(nu)) / 2.
         initial_pol_fraction_coefficients = np.random.uniform(0.0, 1.0, n_terms)
