@@ -16,6 +16,8 @@ class PolFunction(Function):
     def f(self, xdata, *args):
         y = np.zeros(xdata.shape)
         nu_div = (xdata - self.x_0) / self.x_0
+        print("Inside f:", xdata)
+        print("Inside f:", self.x_0)
         if isinstance(nu_div, Quantity):
             nu_div = nu_div.value
         for i in range(0, self.n_terms):
