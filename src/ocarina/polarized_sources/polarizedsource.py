@@ -296,6 +296,9 @@ class PolarizedSource(metaclass=ABCMeta):
         nu_max: [float, Quantity] = np.inf
     ):
         nu, pol_angle = self.filter(self.nu, self.pol_angle, nu_min, nu_max)
+
+        print(nu)
+
         if nu_0 is None:
             nu_0 = (np.max(nu) + np.min(nu)) / 2.
         initial_pol_angle_coefficients = np.random.uniform(-np.pi, np.pi, n_terms)
