@@ -219,6 +219,7 @@ class PolarizationCalibrator(metaclass=ABCMeta):
             pol_fraction_coefficients_errors = pol_source_object.get_source_polarization_information(
                 n_terms_angle=n_terms_angle,
                 n_terms_frac=n_terms_frac,
+                nu_0=self.nu_0,
                 nu_min=self.nu_min,
                 nu_max=self.nu_max
             )

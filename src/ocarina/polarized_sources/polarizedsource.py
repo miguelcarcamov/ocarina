@@ -282,8 +282,7 @@ class PolarizedSource(metaclass=ABCMeta):
         nu_max: [float, Quantity] = np.inf
     ):
         nu, pol_frac = self.filter(self.nu, self.pol_fraction, nu_min, nu_max)
-        print("In pol fraction coeff ", nu)
-        print("In pol fraction coeff ", pol_frac)
+
         if nu_0 is None:
             nu_0 = (np.max(nu) + np.min(nu)) / 2.
         initial_pol_fraction_coefficients = np.random.uniform(0.0, 1.0, n_terms)
@@ -317,12 +316,12 @@ class PolarizedSource(metaclass=ABCMeta):
         return intensity, spec_idx, spec_idx_err
 
     def get_source_polarization_information(
-        self, n_terms_angle=3, n_terms_frac=3, nu_min=0.0, nu_max=np.inf
+        self, n_terms_angle=3, n_terms_frac=3, nu_0: Quantity = 0.0, nu_min=0.0, nu_max=np.inf
     ):
         pol_fraction_coefficients, pol_fraction_coefficients_errors = self.get_pol_fraction_coefficients(
-            n_terms=n_terms_frac, nu_min=nu_min, nu_max=nu_max
+            n_terms=n_terms_frac, nu_0=nu_0, nu_min=nu_min, nu_max=nu_max
         )
         pol_angle_coefficients, pol_angle_coefficients_errors = self.get_pol_angle_coefficients(
-            n_terms=n_terms_angle, nu_min=nu_min, nu_max=nu_max
+            n_terms=n_terms_angle, nu_0=nu_0, nu_min=nu_min, nu_max=nu_max
         )
         return pol_angle_coefficients, pol_angle_coefficients_errors, pol_fraction_coefficients, pol_fraction_coefficients_errors
