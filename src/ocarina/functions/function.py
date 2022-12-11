@@ -43,6 +43,9 @@ class Function(metaclass=ABCMeta):
         self.check_same_units(xdata)
         self.x_0 = self.x_0.value
 
+        print("Coefficients before curve fit: ", initial_coefficients)
+        print("Xdata: ", xdata)
+        print("data: ", data)
         popt, pcov = curve_fit(
             self.f,
             xdata,
