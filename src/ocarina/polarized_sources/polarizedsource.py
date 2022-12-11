@@ -48,7 +48,7 @@ class PolarizedSource(metaclass=ABCMeta):
             self.source = self.source.upper()
 
         if self.source != "":
-            method = getattr(self, switcher.get(self.source, "__init_empty"))
+            method = getattr(self, switcher.get(self.source, "init_empty"))
             method()
 
         # convert frequencies to Hz
