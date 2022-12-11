@@ -161,7 +161,7 @@ class PolarizationCalibrator(metaclass=ABCMeta):
         if os.path.exists(flux_table):
             rmtables(flux_table)
 
-        # From fluxscale documentation we know that coefficients are
+        # From flux scale documentation we know that coefficients are
         # returned from the natural log nu/nu_0 Taylor expansion
         flux_dict = fluxscale(
             vis=self.vis_name,
@@ -220,7 +220,7 @@ class PolarizationCalibrator(metaclass=ABCMeta):
         telescope_factor: float = 1.0
     ):
 
-        # get spectral idx coeffs from NRAO VLA tables
+        # get spectral idx coefficients from NRAO VLA tables
         intensity, spec_idx, spec_idx_err = pol_source_object.get_known_source_information(
             nu_0=self.nu_0, standard=standard, epoch=epoch
         )
@@ -331,7 +331,9 @@ class PolarizationCalibrator(metaclass=ABCMeta):
         )
 
         if not os.path.exists(cal_table):
-            raise FileNotFoundError("Caltable was not created and cannot continue. Exiting...")
+            raise FileNotFoundError(
+                "Calibration table was not created and cannot continue. Exiting..."
+            )
 
         plotms(
             vis=cal_table,
@@ -340,7 +342,7 @@ class PolarizationCalibrator(metaclass=ABCMeta):
             antenna=self.k_cross_ref_ant,
             coloraxis='corr',
             showgui=False,
-            plotfile=self.vis_name[:-3] + '.freqvsdelayKcross.png',
+            plotfile=self.vis_name[:-3] + '.Kcross.png',
             overwrite=True
         )
 
@@ -372,7 +374,7 @@ class PolarizationCalibrator(metaclass=ABCMeta):
         print("Vis: " + self.vis_name)
 
         print("Gain tables: ", gain_table)
-        print("Refant: " + self.ref_ant)
+        print("Reference antenna: " + self.ref_ant)
 
         if field == "":
             cal_table = self.vis_name[:-3] + ".D0"
@@ -410,7 +412,7 @@ class PolarizationCalibrator(metaclass=ABCMeta):
             interp = 'nearest'
 
         print("Spw: " + spw)
-        print("Spwmap: ", spw_map)
+        print("Spw map: ", spw_map)
 
         if field == "":
             field = self.leakage_field
@@ -519,7 +521,7 @@ class PolarizationCalibrator(metaclass=ABCMeta):
 
         print("Gain tables: ", gain_table)
 
-        print("Refant: " + self.ref_ant)
+        print("Reference antenna: " + self.ref_ant)
 
         # TODO: fix string
         cal_table = self.vis_name[:-3] + ".X0"
@@ -716,7 +718,7 @@ class PolarizationCalibrator(metaclass=ABCMeta):
 
         if not spw_map:
             if len(gain_table) - 1 > 0:
-                spw_map_empty = [[]] * (len(gain_table) - 1)  # subtract kcrosstable
+                spw_map_empty = [[]] * (len(gain_table) - 1)  # subtract k-cross table
                 spw_map_empty.insert(0, spw_map0)
                 spw_map = spw_map_empty
             else:
