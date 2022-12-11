@@ -41,11 +41,10 @@ class Function(metaclass=ABCMeta):
         upper_bounds = np.ones_like(initial_coefficients) * upper_bound
 
         self.check_same_units(xdata)
+        print("x ", xdata)
+        print("x_0 after conversion: ", self.x_0)
         self.x_0 = self.x_0.value
 
-        print("Coefficients before curve fit: ", initial_coefficients)
-        print("Xdata: ", xdata)
-        print("data: ", data)
         popt, pcov = curve_fit(
             self.f,
             xdata,
