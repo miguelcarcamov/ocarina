@@ -175,7 +175,7 @@ class PolarizedSource(metaclass=ABCMeta):
         self.pol_fraction = data[:, 2]
         self.pol_angle = data[:, 3] * un.rad
 
-    def __init_empty(self):
+    def init_empty(self):
         self.nu = np.array([]) * un.GHz
         self.pol_angle = np.array([]) * un.deg
         self.pol_fraction = np.array([])
