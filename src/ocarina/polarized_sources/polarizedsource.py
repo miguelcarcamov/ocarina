@@ -299,7 +299,7 @@ class PolarizedSource(metaclass=ABCMeta):
     ):
         nu, pol_angle = self.filter(self.nu, self.pol_angle, nu_min, nu_max)
         if nu_0 is None:
-            (np.max(nu) + np.min(nu)) / 2.
+            nu_0 = (np.max(nu) + np.min(nu)) / 2.
         initial_pol_angle_coefficients = np.random.uniform(-np.pi, np.pi, n_terms)
         source_func_angle = PolFunction(x_0=nu_0, n_terms=n_terms)
         source_func_angle.fit(nu, pol_angle, initial_pol_angle_coefficients)
