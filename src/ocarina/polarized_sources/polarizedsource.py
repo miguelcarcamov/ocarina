@@ -314,12 +314,20 @@ class PolarizedSource(metaclass=ABCMeta):
         return intensity, spec_idx, spec_idx_err
 
     def get_source_polarization_information(
-        self, n_terms_angle=3, n_terms_frac=3, nu_0: Quantity = 0.0, nu_min=0.0, nu_max=np.inf
+        self,
+        n_terms_angle=3,
+        n_terms_frac=3,
+        nu_0: Quantity = 0.0,
+        nu_min_frac=0.0,
+        nu_max_frac=np.inf,
+        nu_min_angle=0.0,
+        nu_max_angle=np.inf
     ):
         pol_fraction_coefficients, pol_fraction_coefficients_errors = self.get_pol_fraction_coefficients(
-            n_terms=n_terms_frac, nu_0=nu_0, nu_min=nu_min, nu_max=nu_max
+            n_terms=n_terms_frac, nu_0=nu_0, nu_min=nu_min_frac, nu_max=nu_max_frac
         )
         pol_angle_coefficients, pol_angle_coefficients_errors = self.get_pol_angle_coefficients(
-            n_terms=n_terms_angle, nu_0=nu_0, nu_min=nu_min, nu_max=nu_max
+            n_terms=n_terms_angle, nu_0=nu_0, nu_min=nu_min_angle, nu_max=nu_max_angle
         )
-        return pol_angle_coefficients, pol_angle_coefficients_errors, pol_fraction_coefficients, pol_fraction_coefficients_errors
+        return pol_angle_coefficients, pol_angle_coefficients_errors, pol_fraction_coefficients, \
+            pol_fraction_coefficients_errors

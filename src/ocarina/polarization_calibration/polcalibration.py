@@ -24,8 +24,10 @@ class PolarizationCalibrator(metaclass=ABCMeta):
     k_cross_ref_ant: str = ""
     mapped_spw: int = 0
     nu_0: Quantity = None
-    nu_min: Quantity = None
-    nu_max: Quantity = None
+    nu_min_frac: Quantity = None
+    nu_max_frac: Quantity = None
+    nu_min_angle: Quantity = None
+    nu_max_angle: Quantity = None
     old_vla: bool = False
     number_spectral_windows: int = dataclass_field(init=False, repr=True, default=0)
     k_cross_table: str = ""
@@ -43,11 +45,17 @@ class PolarizationCalibrator(metaclass=ABCMeta):
             channel_frequencies = channel_column.getcol("CHAN_FREQ") * un.Hz
             self.nu_0 = (np.max(channel_frequencies) + np.min(channel_frequencies)) / 2.
 
-        if self.nu_min is None:
-            self.nu_min = 0.0 * un.Hz
+        if self.nu_min_frac is None:
+            self.nu_min_frac = 0.0 * un.Hz
 
-        if self.nu_max is None:
-            self.nu_max = np.inf * un.Hz
+        if self.nu_max_frac is None:
+            self.nu_max_frac = np.inf * un.Hz
+
+        if self.nu_min_angle is None:
+            self.nu_min_angle = 0.0 * un.Hz
+
+        if self.nu_max_angle is None:
+            self.nu_max_angle = np.inf * un.Hz
 
         if self.spw_ids is None:
             spw_table = query_table(
@@ -61,8 +69,10 @@ class PolarizationCalibrator(metaclass=ABCMeta):
         self.number_spectral_windows = len(self.spw_ids)
         print("Number of spectral windows: " + str(self.number_spectral_windows))
         print("Reference freq: {0}".format(self.nu_0.to(un.GHz)))
-        print("Minimum freq: {0}".format(self.nu_min.to(un.GHz)))
-        print("Maximum freq: {0}".format(self.nu_max.to(un.GHz)))
+        print("Minimum freq for polarization fraction: {0}".format(self.nu_min_frac.to(un.GHz)))
+        print("Maximum freq for polarization fraction: {0}".format(self.nu_max_frac.to(un.GHz)))
+        print("Minimum freq for polarization angle: {0}".format(self.nu_min_angle.to(un.GHz)))
+        print("Maximum freq for polarization angle: {0}".format(self.nu_max_angle.to(un.GHz)))
 
     def plot_models(self, field: str = ""):
         plotms(
@@ -220,8 +230,10 @@ class PolarizationCalibrator(metaclass=ABCMeta):
                 n_terms_angle=n_terms_angle,
                 n_terms_frac=n_terms_frac,
                 nu_0=self.nu_0,
-                nu_min=self.nu_min,
-                nu_max=self.nu_max
+                nu_min_frac=self.nu_min_frac,
+                nu_max_frac=self.nu_max_frac,
+                nu_min_angle=self.nu_min_angle,
+                nu_max_angle=self.nu_max_angle
             )
 
         intensity *= telescope_factor
