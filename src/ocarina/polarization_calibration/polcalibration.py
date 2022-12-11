@@ -280,7 +280,8 @@ class PolarizationCalibrator(metaclass=ABCMeta):
         combine: str = 'scan,spw',
         spw_interval: str = "",
         channels: str = "",
-        ref_ant_mode: str = "strict"
+        ref_ant_mode: str = "strict",
+        min_bl_per_ant: int = 4
     ):
         print("Solving Cross-hand Delays")
         print("Vis: " + self.vis_name)
@@ -315,6 +316,7 @@ class PolarizationCalibrator(metaclass=ABCMeta):
             refant=self.k_cross_ref_ant,
             refantmode=ref_ant_mode,
             antenna=self.antennas,
+            minblperant=min_bl_per_ant,
             minsnr=min_snr,
             gaintype="KCROSS",
             solint=sol_int,
@@ -349,6 +351,7 @@ class PolarizationCalibrator(metaclass=ABCMeta):
         self,
         sol_int: str = 'inf',
         min_snr: float = 3.0,
+        min_bl_per_ant: int = 4,
         pol_type: str = "Df",
         spw_map: list = [],
         gain_table: list = [],
@@ -418,6 +421,7 @@ class PolarizationCalibrator(metaclass=ABCMeta):
             field=field,
             spw=spw,
             refant=self.ref_ant,
+            minblperant=min_bl_per_ant,
             antenna=self.antennas,
             poltype=pol_type,
             solint=sol_int,
@@ -495,6 +499,7 @@ class PolarizationCalibrator(metaclass=ABCMeta):
         self,
         sol_int: str = 'inf',
         min_snr: float = 3.0,
+        min_bl_per_ant: int = 4,
         pol_type: str = "Xf",
         spw_map: list = [],
         gain_table: list = [],
@@ -557,6 +562,7 @@ class PolarizationCalibrator(metaclass=ABCMeta):
             field=field,
             spw=spw,
             refant=self.ref_ant,
+            minblperant=min_bl_per_ant,
             antenna=self.antennas,
             poltype=pol_type,
             solint=sol_int,
