@@ -12,13 +12,13 @@ class FluxFunction(Function):
     def f(self, xdata: Union[np.ndarray, Quantity], *args):
         self.check_same_units(xdata)
         nu_div = xdata / self.x_0
-        exp = args[0] + args[1] * np.log(nu_div)
+        exp = args[0] + args[1] * np.log10(nu_div)
         s_flux = self.flux_0 * nu_div**exp
         return s_flux
 
     def f_eval(self, xdata: Union[np.ndarray, Quantity], coefficients):
         self.check_same_units(xdata)
         nu_div = xdata / self.x_0
-        exp = coefficients[0] + coefficients[1] * np.log(nu_div)
+        exp = coefficients[0] + coefficients[1] * np.log10(nu_div)
         s_flux = self.flux_0 * nu_div**exp
         return s_flux

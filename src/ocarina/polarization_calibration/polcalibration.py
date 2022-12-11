@@ -225,12 +225,13 @@ class PolarizationCalibrator(metaclass=ABCMeta):
             nu_0=self.nu_0, standard=standard, epoch=epoch
         )
 
-        pol_angle_coefficients, pol_angle_coefficients_errors, pol_fraction_coefficients, pol_fraction_coefficients_errors = pol_source_object.get_source_polarization_information(
-            n_terms_angle=n_terms_angle,
-            n_terms_frac=n_terms_frac,
-            nu_min=self.nu_min,
-            nu_max=self.nu_max
-        )
+        pol_angle_coefficients, pol_angle_coefficients_errors, pol_fraction_coefficients, \
+            pol_fraction_coefficients_errors = pol_source_object.get_source_polarization_information(
+                n_terms_angle=n_terms_angle,
+                n_terms_frac=n_terms_frac,
+                nu_min=self.nu_min,
+                nu_max=self.nu_max
+            )
 
         intensity *= telescope_factor
         # get intensity in reference frequency
@@ -241,9 +242,9 @@ class PolarizationCalibrator(metaclass=ABCMeta):
 
         print("Alpha & Beta: ", spec_idx)
         print("Error: ", spec_idx_err)
-        print("Pol fraction coeffs: ", pol_fraction_coefficients)
+        print("Pol fraction coefficients: ", pol_fraction_coefficients)
         print("Error: ", pol_fraction_coefficients_errors)
-        print("Pol angle coeffs: ", pol_angle_coefficients)
+        print("Pol angle coefficients: ", pol_angle_coefficients)
         print("Error: ", pol_angle_coefficients_errors)
         source_dict = setjy(
             vis=self.vis_name,
@@ -286,7 +287,7 @@ class PolarizationCalibrator(metaclass=ABCMeta):
         print("Solving Cross-hand Delays")
         print("Vis: " + self.vis_name)
         print("Field: " + self.pol_angle_field)
-        print("Refant: " + self.ref_ant)
+        print("Reference antenna: " + self.ref_ant)
 
         # TODO: Get string before .ms without using slicing
         cal_table = self.vis_name[:-3] + ".Kcross"

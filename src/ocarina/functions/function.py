@@ -52,7 +52,7 @@ class Function(metaclass=ABCMeta):
             sigma=sigma,
             bounds=(lower_bounds, upper_bounds)
         )
-        perr = np.sqrt(np.diag(pcov))
+        opt_error = np.sqrt(np.diag(pcov))
         self.coefficients = popt
-        self.coefficients_errors = perr
-        return popt, perr
+        self.coefficients_errors = opt_error
+        return popt, opt_error
