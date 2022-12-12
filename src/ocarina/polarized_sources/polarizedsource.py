@@ -17,7 +17,7 @@ class PolarizedSource(metaclass=ABCMeta):
     # Object that takes information of different known
     # polarized sources from https://science.nrao.edu/facilities/vla/docs/manuals/obsguide/modes/pol
     nu: Quantity = None
-    flux_density: Quantity = None
+    flux: Quantity = None
     pol_angle: Quantity = None
     pol_fraction: np.ndarray = None
     spectral_idx_coefficients: np.ndarray = None
@@ -77,7 +77,7 @@ class PolarizedSource(metaclass=ABCMeta):
             ]
         ) / 100.
 
-        self.flux_density = np.zeros_like(self.pol_fraction) * un.Jy
+        self.flux = np.zeros_like(self.pol_fraction) * un.Jy
 
     def p3c48_2019(self):
         self.__read_source_from_txt()
@@ -102,7 +102,7 @@ class PolarizedSource(metaclass=ABCMeta):
                 7.9, 7.7, 7.4, 6.7, 6.5, 6.7, 6.6, 6.6, 6.5
             ]
         ) / 100.
-        self.flux_density = np.zeros_like(self.pol_fraction) * un.Jy
+        self.flux = np.zeros_like(self.pol_fraction) * un.Jy
 
     def p3c138_2019(self):
         self.__read_source_from_txt()
@@ -127,7 +127,7 @@ class PolarizedSource(metaclass=ABCMeta):
                 11.9, 11.9, 12.1, 12.2, 12.5, 12.5, 12.6, 12.6, 13.1, 13.2
             ]
         ) / 100.
-        self.flux_density = np.zeros_like(self.pol_fraction) * un.Jy
+        self.flux = np.zeros_like(self.pol_fraction) * un.Jy
 
     def p3c286_2019(self):
         self.__read_source_from_txt()
@@ -152,7 +152,7 @@ class PolarizedSource(metaclass=ABCMeta):
                 2.9, 3.4, 3.5, 3.8, 3.8, 4.4, 5.2
             ]
         ) / 100.
-        self.flux_density = np.zeros_like(self.pol_fraction) * un.Jy
+        self.flux = np.zeros_like(self.pol_fraction) * un.Jy
 
     def p3c147_2019(self):
         self.__read_source_from_txt()
@@ -171,12 +171,13 @@ class PolarizedSource(metaclass=ABCMeta):
         file_name = path_txt_files / (self.source.lower() + ".txt")
         data = np.loadtxt(str(file_name))
         self.nu = data[:, 0] * un.GHz
-        self.flux_density = data[:, 1] * un.Jy
+        self.flux = data[:, 1] * un.Jy
         self.pol_fraction = data[:, 2]
         self.pol_angle = data[:, 3] * un.rad
 
     def init_empty(self):
         self.nu = np.array([]) * un.GHz
+        self.flux = np.array([]) * un.Jy
         self.pol_angle = np.array([]) * un.deg
         self.pol_fraction = np.array([])
 
@@ -221,10 +222,10 @@ class PolarizedSource(metaclass=ABCMeta):
 
         return 10.0**flux_at_nu
 
-    def flux_scalar(self, nu: Union[float, Quantity]) -> float:
+    def get_flux_scalar(self, nu: Union[float, Quantity]) -> float:
         return self.flux_scalar_giving_coefficients(nu, self.spectral_idx_coefficients)
 
-    def flux(self, nu: Union[np.ndarray, Quantity]) -> np.ndarray:
+    def get_flux(self, nu: Union[np.ndarray, Quantity]) -> np.ndarray:
         return self.flux_giving_coefficients(nu, self.spectral_idx_coefficients)
 
     def get_coefficients_from_table(self, standard="Perley-Butler 2017", epoch="2017"):
@@ -246,17 +247,17 @@ class PolarizedSource(metaclass=ABCMeta):
             nu_0 = (np.max(nu) + np.min(nu)) / 2.
 
         nearest_nu_0_index = np.argmin(np.abs(nu - nu_0))
-        flux_0 = self.flux_density[nearest_nu_0_index]
+        flux_0 = self.flux[nearest_nu_0_index]
         initial_coefficients = np.random.rand(2)
         source_func_frac = FluxFunction(flux_0=flux_0, xdata=nu, x_0=nu_0)
-        source_func_frac.fit(nu, self.flux_density.value, initial_coefficients)
+        source_func_frac.fit(nu, self.flux.value, initial_coefficients)
         return source_func_frac.coefficients, source_func_frac.coefficients_errors
 
     def fit_alpha_and_beta(self, nu: Quantity, nu_0: Quantity = None):
         if nu_0 is None:
             nu_0 = (np.max(nu) + np.min(nu)) / 2.
-        flux_0 = self.flux_scalar(nu_0)
-        fluxes = self.flux(nu)
+        flux_0 = self.get_flux_scalar(nu_0)
+        fluxes = self.get_flux(nu)
         upper_bound = self.spectral_idx_coefficients + self.spectral_idx_coefficients_errors
         lower_bound = self.spectral_idx_coefficients - self.spectral_idx_coefficients_errors
         fluxes_upper_bound = self.flux_giving_coefficients(nu, upper_bound)
@@ -310,7 +311,7 @@ class PolarizedSource(metaclass=ABCMeta):
         self.get_coefficients_from_table(standard=standard, epoch=epoch)
         nu_fit = np.linspace(0.3275, 50.0, 40) * un.GHz
         spec_idx, spec_idx_err = self.fit_alpha_and_beta(nu_fit, nu_0=nu_0)
-        intensity = self.flux_scalar(nu_0)
+        intensity = self.get_flux_scalar(nu_0)
         return intensity, spec_idx, spec_idx_err
 
     def get_source_polarization_information(
