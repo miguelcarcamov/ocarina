@@ -217,8 +217,8 @@ class PolarizedSource(metaclass=ABCMeta):
             nu = nu.to(un.GHz).value
         flux_at_nu = np.zeros_like(nu, dtype=np.float32)
 
-        for i in range(len(coefficients)):
-            flux_at_nu += coefficients[i] * np.log10(nu)**i
+        for i, coefficient in enumerate(coefficients):
+            flux_at_nu += coefficient * np.log10(nu)**i
 
         return 10.0**flux_at_nu
 
