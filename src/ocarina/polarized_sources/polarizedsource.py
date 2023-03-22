@@ -246,29 +246,34 @@ class PolarizedSource(metaclass=ABCMeta):
         if nu_0 is None:
             nu_0 = (np.max(nu) + np.min(nu)) / 2.
 
-        nearest_nu_0_index = np.argmin(np.abs(nu - nu_0))
-        flux_0 = self.flux[nearest_nu_0_index]
-        initial_coefficients = np.random.rand(2)
-        source_func_frac = FluxFunction(flux_0=flux_0, xdata=nu, x_0=nu_0)
+        initial_coefficients = np.random.rand(3)
+        source_func_frac = FluxFunction(xdata=nu, x_0=nu_0)
         source_func_frac.fit(nu, self.flux.value, initial_coefficients)
         return source_func_frac.coefficients, source_func_frac.coefficients_errors
 
-    def fit_alpha_and_beta(self, nu: Quantity, nu_0: Quantity = None):
+    def fit_alpha_and_beta(self, nu: Quantity, nu_0: Quantity = None, flux: Quantity = None):
         if nu_0 is None:
             nu_0 = (np.max(nu) + np.min(nu)) / 2.
-        flux_0 = self.get_flux_scalar(nu_0)
-        fluxes = self.get_flux(nu)
-        upper_bound = self.spectral_idx_coefficients + self.spectral_idx_coefficients_errors
-        lower_bound = self.spectral_idx_coefficients - self.spectral_idx_coefficients_errors
-        fluxes_upper_bound = self.flux_giving_coefficients(nu, upper_bound)
-        fluxes_lower_bound = self.flux_giving_coefficients(nu, lower_bound)
-        error_sigma = 0.5 * (fluxes_upper_bound - fluxes_lower_bound)
-        if np.sum(error_sigma) == 0.0:
-            error_sigma = None
 
-        initial_coefficients = np.random.rand(2)
-        source_func_frac = FluxFunction(flux_0=flux_0, xdata=nu, x_0=nu_0)
-        source_func_frac.fit(nu, fluxes, initial_coefficients, sigma=error_sigma)
+        initial_coefficients = np.random.rand(3)
+        error_sigma = None
+        if flux is None:
+            flux_0 = self.get_flux_scalar(nu_0)
+            flux = self.get_flux(nu)
+
+            upper_bound = self.spectral_idx_coefficients + self.spectral_idx_coefficients_errors
+            lower_bound = self.spectral_idx_coefficients - self.spectral_idx_coefficients_errors
+            fluxes_upper_bound = self.flux_giving_coefficients(nu, upper_bound)
+            fluxes_lower_bound = self.flux_giving_coefficients(nu, lower_bound)
+            error_sigma = 0.5 * (fluxes_upper_bound - fluxes_lower_bound)
+
+            if np.sum(error_sigma) == 0.0:
+                error_sigma = None
+
+            initial_coefficients[0] = flux_0
+
+        source_func_frac = FluxFunction(xdata=nu, x_0=nu_0)
+        source_func_frac.fit(nu, flux, initial_coefficients, sigma=error_sigma)
         return source_func_frac.coefficients, source_func_frac.coefficients_errors
 
     # Returns pol fraction coeffs
@@ -310,9 +315,10 @@ class PolarizedSource(metaclass=ABCMeta):
     ):
         self.get_coefficients_from_table(standard=standard, epoch=epoch)
         nu_fit = np.linspace(0.3275, 50.0, 40) * un.GHz
-        spec_idx, spec_idx_err = self.fit_alpha_and_beta(nu_fit, nu_0=nu_0)
-        intensity = self.get_flux_scalar(nu_0)
-        return intensity, spec_idx, spec_idx_err
+        coefficients, coefficients_err = self.fit_alpha_and_beta(nu_fit, nu_0=nu_0)
+        intensity = coefficients[0]
+        spec_idx = coefficients[1:len(coefficients)]
+        return intensity, spec_idx, coefficients_err
 
     def get_source_polarization_information(
         self,
