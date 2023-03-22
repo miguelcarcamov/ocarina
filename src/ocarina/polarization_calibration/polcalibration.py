@@ -2,6 +2,7 @@ import os
 import sys
 import numpy as np
 from dataclasses import dataclass
+from dataclasses import field as dataclass_field
 from abc import ABCMeta
 from casatasks import polcal, applycal, gaincal, setjy, fluxscale, rmtables, flagdata, flagmanager
 from casaplotms import plotms
@@ -23,10 +24,12 @@ class PolarizationCalibrator(metaclass=ABCMeta):
     k_cross_ref_ant: str = ""
     mapped_spw: int = 0
     nu_0: Quantity = None
-    nu_min: Quantity = None
-    nu_max: Quantity = None
+    nu_min_frac: Quantity = None
+    nu_max_frac: Quantity = None
+    nu_min_angle: Quantity = None
+    nu_max_angle: Quantity = None
     old_vla: bool = False
-    number_spectral_windows: int = 0
+    number_spectral_windows: int = dataclass_field(init=False, repr=True, default=0)
     k_cross_table: str = ""
     leakage_table: str = ""
     pol_angle_table: str = ""
@@ -34,29 +37,25 @@ class PolarizationCalibrator(metaclass=ABCMeta):
     def __post_init__(self):
 
         if self.nu_0 is None:
-            spw_table = query_table(
+            channel_column = query_table(
                 table_name=self.vis_name,
-                query="SELECT REF_FREQUENCY FROM " + self.vis_name + "/SPECTRAL_WINDOW" +
+                query="SELECT CHAN_FREQ FROM " + self.vis_name + "/SPECTRAL_WINDOW" +
                 " WHERE !FLAG_ROW"
             )
-            spw_ref_frequencies = spw_table.getcol("REF_FREQUENCY") * un.Hz
-            self.nu_0 = np.median(spw_ref_frequencies)
+            channel_frequencies = channel_column.getcol("CHAN_FREQ") * un.Hz
+            self.nu_0 = (np.max(channel_frequencies) + np.min(channel_frequencies)) / 2.
 
-        if self.nu_min is None:
-            min_freq = query_table(
-                table_name=self.vis_name,
-                query="SELECT GMIN(CHAN_FREQ) AS FREQ_MIN FROM " + self.vis_name +
-                "/SPECTRAL_WINDOW" + " WHERE !FLAG_ROW"
-            )
-            self.nu_min = min_freq.getcol("FREQ_MIN")[0] * un.Hz
+        if self.nu_min_frac is None:
+            self.nu_min_frac = 0.0 * un.Hz
 
-        if self.nu_max is None:
-            max_freq = query_table(
-                table_name=self.vis_name,
-                query="SELECT GMAX(CHAN_FREQ) AS FREQ_MAX FROM " + self.vis_name +
-                "/SPECTRAL_WINDOW" + " WHERE !FLAG_ROW"
-            )
-            self.nu_max = max_freq.getcol("FREQ_MAX")[0] * un.Hz
+        if self.nu_max_frac is None:
+            self.nu_max_frac = np.inf * un.Hz
+
+        if self.nu_min_angle is None:
+            self.nu_min_angle = 0.0 * un.Hz
+
+        if self.nu_max_angle is None:
+            self.nu_max_angle = np.inf * un.Hz
 
         if self.spw_ids is None:
             spw_table = query_table(
@@ -69,9 +68,11 @@ class PolarizationCalibrator(metaclass=ABCMeta):
 
         self.number_spectral_windows = len(self.spw_ids)
         print("Number of spectral windows: " + str(self.number_spectral_windows))
-        print("Reference freq: " + str(self.nu_0))
-        print("Minimum freq: " + str(self.nu_min))
-        print("Maximum freq: " + str(self.nu_max))
+        print("Reference freq: {0}".format(self.nu_0.to(un.GHz)))
+        print("Minimum freq for polarization fraction: {0}".format(self.nu_min_frac.to(un.GHz)))
+        print("Maximum freq for polarization fraction: {0}".format(self.nu_max_frac.to(un.GHz)))
+        print("Minimum freq for polarization angle: {0}".format(self.nu_min_angle.to(un.GHz)))
+        print("Maximum freq for polarization angle: {0}".format(self.nu_max_angle.to(un.GHz)))
 
     def plot_models(self, field: str = ""):
         plotms(
@@ -108,6 +109,7 @@ class PolarizationCalibrator(metaclass=ABCMeta):
             antenna=self.ref_ant,
             xaxis='frequency',
             yaxis='phase',
+            plotrange=[-1, -1, -180, 180],
             ydatacolumn='model',
             showgui=False,
             plotfile=field + '_RRphase_model.png',
@@ -121,6 +123,7 @@ class PolarizationCalibrator(metaclass=ABCMeta):
             antenna=self.ref_ant,
             xaxis='frequency',
             yaxis='phase',
+            plotrange=[-1, -1, -180, 180],
             ydatacolumn='model',
             showgui=False,
             plotfile=field + '_RLphase_model.png',
@@ -135,7 +138,8 @@ class PolarizationCalibrator(metaclass=ABCMeta):
         reference_field: str = "",
         transfer_field: str = "",
         fit_order: int = 1,
-        use_scratch: bool = False
+        use_scratch: bool = True,
+        telescope_factor: float = 1.0
     ):
 
         field_table = query_table(
@@ -143,7 +147,12 @@ class PolarizationCalibrator(metaclass=ABCMeta):
         )
         field_ids = field_table.rownumbers()
         fields = field_table.getcol("NAME")
-        field_id_query = np.where(fields == field)[0][0]
+
+        try:
+            field_id_query = np.where(fields == field)[0][0]
+        except IndexError:
+            raise ValueError("The field you have entered does not exist in the measurement set")
+
         field_id = field_ids[field_id_query]
         print("Field " + field + " - ID: " + str(field_id))
         field_table.close()
@@ -152,7 +161,7 @@ class PolarizationCalibrator(metaclass=ABCMeta):
         if os.path.exists(flux_table):
             rmtables(flux_table)
 
-        # From fluxscale documentation we know that coefficients are
+        # From flux scale documentation we know that coefficients are
         # returned from the natural log nu/nu_0 Taylor expansion
         flux_dict = fluxscale(
             vis=self.vis_name,
@@ -162,21 +171,22 @@ class PolarizationCalibrator(metaclass=ABCMeta):
             transfer=transfer_field,
             fitorder=fit_order
         )
-        print(flux_dict)
-        coefficients = np.array(flux_dict[str(field_id)]['spidx'].tolist())
+
+        coefficients = flux_dict[str(field_id)]['spidx']
+        fit_ref_freq = flux_dict[str(field_id)]['fitRefFreq'] * un.Hz
 
         print(
-            "Coefficients: ", coefficients
+            "Coefficients: {0}".format(coefficients)
         )  # a0 log10(S at nu_0), a1 spectral idx, a2 spectral curvature
-        print("a0 log10(S at nu_0), a1 spectral idx, a2 spectral curvature")
+
         pol_source_object.coefficients = coefficients
         # Extract a0 and make coefficients to have only spectral index and spectral curvature coefficients
-        intensity = 10.0**coefficients[0]
-        spectral_index = coefficients[1:-1]
+        intensity = 10.0**coefficients[0] * telescope_factor
+        spectral_index = coefficients[1:]
 
-        print("Setting model of: " + pol_source_object.name)
+        print("Setting model of: " + pol_source_object.source)
         print("Field: " + field)
-        print("Reference freq: " + self.nu_0)
+        print("Reference freq: {0}".format(fit_ref_freq.to(un.GHz)))
         print("I(nu_0) = " + str(intensity))
 
         print("Alpha & Beta: ", spectral_index)
@@ -188,7 +198,7 @@ class PolarizationCalibrator(metaclass=ABCMeta):
             spw='',
             fluxdensity=[intensity, 0, 0, 0],
             spix=spectral_index.tolist(),
-            reffreq=str(self.nu_0),
+            reffreq=str(fit_ref_freq).replace(" ", ""),
             interpolation="nearest",
             scalebychan=True,
             usescratch=use_scratch
@@ -206,45 +216,63 @@ class PolarizationCalibrator(metaclass=ABCMeta):
         epoch: str = "2017",
         n_terms_angle: int = 3,
         n_terms_frac: int = 3,
-        use_scratch: bool = False
+        use_scratch: bool = True,
+        telescope_factor: float = 1.0
     ):
 
-        # get spectral idx coeffs from NRAO VLA tables
+        # get spectral idx coefficients from NRAO VLA tables
         intensity, spec_idx, spec_idx_err = pol_source_object.get_known_source_information(
             nu_0=self.nu_0, standard=standard, epoch=epoch
         )
 
-        pol_angle_coefficients, pol_angle_coefficients_errors, pol_fraction_coefficients, pol_fraction_coefficients_errors = pol_source_object.get_source_polarization_information(
-            n_terms_angle=n_terms_angle,
-            n_terms_frac=n_terms_frac,
-            nu_min=self.nu_min,
-            nu_max=self.nu_max
-        )
+        pol_angle_coefficients, pol_angle_coefficients_errors, pol_fraction_coefficients, \
+            pol_fraction_coefficients_errors = pol_source_object.get_source_polarization_information(
+                n_terms_angle=n_terms_angle,
+                n_terms_frac=n_terms_frac,
+                nu_0=self.nu_0,
+                nu_min_frac=self.nu_min_frac,
+                nu_max_frac=self.nu_max_frac,
+                nu_min_angle=self.nu_min_angle,
+                nu_max_angle=self.nu_max_angle
+            )
+
+        intensity *= telescope_factor
         # get intensity in reference frequency
-        print("Setting model of: " + pol_source_object.name)
+        print("Setting model of: " + pol_source_object.source)
         print("Field: " + field)
-        print("Reference freq: " + str(self.nu_0))
+        print("Reference freq: {0}".format(self.nu_0.to(un.GHz)))
         print("I = " + str(intensity))
 
         print("Alpha & Beta: ", spec_idx)
         print("Error: ", spec_idx_err)
-        print("Pol fraction coeffs: ", pol_fraction_coefficients)
+        print("Pol fraction coefficients: ", pol_fraction_coefficients)
         print("Error: ", pol_fraction_coefficients_errors)
-        print("Pol angle coeffs: ", pol_angle_coefficients)
+        print("Pol angle coefficients: ", pol_angle_coefficients)
         print("Error: ", pol_angle_coefficients_errors)
         source_dict = setjy(
             vis=self.vis_name,
             field=field,
             standard='manual',
             spw='',
+            selectdata=False,
+            timerange="",
+            scan="",
+            intent="",
+            observation="",
+            model="",
+            listmodels=False,
             fluxdensity=[intensity, 0, 0, 0],
             spix=spec_idx.tolist(),
-            reffreq=str(self.nu_0),
+            reffreq=str(self.nu_0).replace(" ", ""),
             polindex=pol_fraction_coefficients,
             polangle=pol_angle_coefficients,
+            rotmeas=0,
+            fluxdict={},
+            useephemdir=False,
             interpolation="nearest",
             scalebychan=True,
-            usescratch=use_scratch
+            usescratch=use_scratch,
+            ismms=False
         )
         print(source_dict)
         self.plot_models(field)
@@ -256,15 +284,16 @@ class PolarizationCalibrator(metaclass=ABCMeta):
         combine: str = 'scan,spw',
         spw_interval: str = "",
         channels: str = "",
-        ref_ant_mode: str = "strict"
+        ref_ant_mode: str = "strict",
+        min_bl_per_ant: int = 4
     ):
         print("Solving Cross-hand Delays")
         print("Vis: " + self.vis_name)
         print("Field: " + self.pol_angle_field)
-        print("Refant: " + self.ref_ant)
+        print("Reference antenna: " + self.ref_ant)
 
         # TODO: Get string before .ms without using slicing
-        cal_table = self.vis[:-3] + ".Kcross"
+        cal_table = self.vis_name[:-3] + ".Kcross"
         if os.path.exists(cal_table):
             rmtables(cal_table)
         first_spw = self.spw_ids[0]
@@ -291,6 +320,7 @@ class PolarizationCalibrator(metaclass=ABCMeta):
             refant=self.k_cross_ref_ant,
             refantmode=ref_ant_mode,
             antenna=self.antennas,
+            minblperant=min_bl_per_ant,
             minsnr=min_snr,
             gaintype="KCROSS",
             solint=sol_int,
@@ -305,7 +335,9 @@ class PolarizationCalibrator(metaclass=ABCMeta):
         )
 
         if not os.path.exists(cal_table):
-            raise FileNotFoundError("Caltable was not created and cannot continue. Exiting...")
+            raise FileNotFoundError(
+                "Calibration table was not created and cannot continue. Exiting..."
+            )
 
         plotms(
             vis=cal_table,
@@ -314,7 +346,7 @@ class PolarizationCalibrator(metaclass=ABCMeta):
             antenna=self.k_cross_ref_ant,
             coloraxis='corr',
             showgui=False,
-            plotfile=self.vis_name[:-3] + '.freqvsdelayKcross.png',
+            plotfile=self.vis_name[:-3] + '.Kcross.png',
             overwrite=True
         )
 
@@ -325,13 +357,14 @@ class PolarizationCalibrator(metaclass=ABCMeta):
         self,
         sol_int: str = 'inf',
         min_snr: float = 3.0,
+        min_bl_per_ant: int = 4,
         pol_type: str = "Df",
         spw_map: list = [],
         gain_table: list = [],
         gain_field: list = [],
         clip_min: float = 0.0,
         clip_max: float = 0.25,
-        flag_clip: bool = True,
+        flag_clip: bool = False,
         interp_mode: str = 'linear',
         spw: str = "",
         field: str = ""
@@ -345,13 +378,13 @@ class PolarizationCalibrator(metaclass=ABCMeta):
         print("Vis: " + self.vis_name)
 
         print("Gain tables: ", gain_table)
-        print("Refant: " + self.ref_ant)
+        print("Reference antenna: " + self.ref_ant)
 
         if field == "":
             cal_table = self.vis_name[:-3] + ".D0"
             print("Field: " + self.leakage_field)
         else:
-            cal_table = self.vis[:-3] + ".D." + field
+            cal_table = self.vis_name[:-3] + ".D." + field
             print("Field " + field)
 
         if not gain_field:
@@ -383,7 +416,7 @@ class PolarizationCalibrator(metaclass=ABCMeta):
             interp = 'nearest'
 
         print("Spw: " + spw)
-        print("Spwmap: ", spw_map)
+        print("Spw map: ", spw_map)
 
         if field == "":
             field = self.leakage_field
@@ -394,6 +427,7 @@ class PolarizationCalibrator(metaclass=ABCMeta):
             field=field,
             spw=spw,
             refant=self.ref_ant,
+            minblperant=min_bl_per_ant,
             antenna=self.antennas,
             poltype=pol_type,
             solint=sol_int,
@@ -434,6 +468,8 @@ class PolarizationCalibrator(metaclass=ABCMeta):
             iteraxis='antenna',
             coloraxis='corr',
             showgui=False,
+            gridrows=3,
+            gridcols=3,
             plotfile=self.vis_name[:-3] + '.D0.ampvsfreq.png',
             overwrite=True
         )
@@ -444,21 +480,11 @@ class PolarizationCalibrator(metaclass=ABCMeta):
             yaxis='phase',
             iteraxis='antenna',
             coloraxis='corr',
+            gridrows=3,
+            gridcols=3,
             plotrange=[-1, -1, -180, 180],
             showgui=False,
             plotfile=self.vis_name[:-3] + '.D0.phasevschan.png',
-            overwrite=True
-        )
-
-        plotms(
-            vis=cal_table,
-            xaxis='chan',
-            yaxis='phase',
-            iteraxis='antenna',
-            coloraxis='corr',
-            plotrange=[-1, -1, -180, 180],
-            showgui=False,
-            plotfile=self.vis_name[:-3] + '.D0.ampvsantenna.png',
             overwrite=True
         )
 
@@ -468,7 +494,7 @@ class PolarizationCalibrator(metaclass=ABCMeta):
             yaxis='amp',
             coloraxis='corr',
             showgui=False,
-            plotfile=self.vis_name[:-3] + '.D0.ampvsantenna1.png',
+            plotfile=self.vis_name[:-3] + '.D0.ampvsantenna.png',
             overwrite=True
         )
 
@@ -479,6 +505,7 @@ class PolarizationCalibrator(metaclass=ABCMeta):
         self,
         sol_int: str = 'inf',
         min_snr: float = 3.0,
+        min_bl_per_ant: int = 4,
         pol_type: str = "Xf",
         spw_map: list = [],
         gain_table: list = [],
@@ -498,7 +525,7 @@ class PolarizationCalibrator(metaclass=ABCMeta):
 
         print("Gain tables: ", gain_table)
 
-        print("Refant: " + self.ref_ant)
+        print("Reference antenna: " + self.ref_ant)
 
         # TODO: fix string
         cal_table = self.vis_name[:-3] + ".X0"
@@ -541,6 +568,7 @@ class PolarizationCalibrator(metaclass=ABCMeta):
             field=field,
             spw=spw,
             refant=self.ref_ant,
+            minblperant=min_bl_per_ant,
             antenna=self.antennas,
             poltype=pol_type,
             solint=sol_int,
@@ -556,9 +584,10 @@ class PolarizationCalibrator(metaclass=ABCMeta):
             sys.exit("Caltable was not created and cannot continue. Exiting...")
         plotms(
             vis=cal_table,
-            xaxis='frequency',
+            xaxis='freq',
             yaxis='phase',
             coloraxis='spw',
+            plotrange=[-1, -1, -180, 180],
             showgui=False,
             plotfile=self.vis_name[:-3] + '.X0.phasevsfreq.png',
             overwrite=True
@@ -571,7 +600,7 @@ class PolarizationCalibrator(metaclass=ABCMeta):
         if field == "" and cal_table == "":
             plotms(
                 vis=self.leakage_table,
-                xaxis='antenna',
+                xaxis='antenna1',
                 yaxis='amp',
                 plotfile=plot_dir + self.vis_name[:-3] + '.D0.amp.png',
                 showgui=False,
@@ -579,16 +608,16 @@ class PolarizationCalibrator(metaclass=ABCMeta):
             )
             plotms(
                 vis=self.leakage_table,
-                xaxis='antenna',
+                xaxis='antenna1',
                 yaxis='phase',
-                iteraxis='antenna',
+                plotrange=[-1, -1, -180, 180],
                 plotfile=plot_dir + self.vis_name[:-3] + '.D0.phs.png',
                 showgui=False,
                 overwrite=True
             )
             plotms(
                 vis=self.leakage_table,
-                xaxis='antenna',
+                xaxis='antenna1',
                 yaxis='snr',
                 showgui=False,
                 plotfile=plot_dir + self.vis_name[:-3] + '.D0.snr.png',
@@ -605,7 +634,7 @@ class PolarizationCalibrator(metaclass=ABCMeta):
         else:
             plotms(
                 vis=cal_table,
-                xaxis='antenna',
+                xaxis='antenna1',
                 yaxis='amp',
                 plotfile=plot_dir + self.vis_name[:-3] + '.D.' + field + 'amp.png',
                 showgui=False,
@@ -613,16 +642,16 @@ class PolarizationCalibrator(metaclass=ABCMeta):
             )
             plotms(
                 vis=cal_table,
-                xaxis='antenna',
+                xaxis='antenna1',
                 yaxis='phase',
-                iteraxis='antenna',
+                plotrange=[-1, -1, -180, 180],
                 plotfile=plot_dir + self.vis_name[:-3] + '.D.' + field + 'phs.png',
                 showgui=False,
                 overwrite=True
             )
             plotms(
                 vis=cal_table,
-                xaxis='antenna',
+                xaxis='antenna1',
                 yaxis='snr',
                 showgui=False,
                 plotfile=plot_dir + self.vis_name[:-3] + '.D.' + field + 'snr.png',
@@ -693,7 +722,7 @@ class PolarizationCalibrator(metaclass=ABCMeta):
 
         if not spw_map:
             if len(gain_table) - 1 > 0:
-                spw_map_empty = [[]] * (len(gain_table) - 1)  # subtract kcrosstable
+                spw_map_empty = [[]] * (len(gain_table) - 1)  # subtract k-cross table
                 spw_map_empty.insert(0, spw_map0)
                 spw_map = spw_map_empty
             else:

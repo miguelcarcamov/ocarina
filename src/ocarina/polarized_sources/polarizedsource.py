@@ -1,6 +1,7 @@
 import numpy as np
 from casatools import table
 from dataclasses import dataclass, field
+from pathlib import Path
 import astropy.units as un
 from typing import Union
 from astropy.units import Quantity
@@ -16,6 +17,7 @@ class PolarizedSource(metaclass=ABCMeta):
     # Object that takes information of different known
     # polarized sources from https://science.nrao.edu/facilities/vla/docs/manuals/obsguide/modes/pol
     nu: Quantity = None
+    flux: Quantity = None
     pol_angle: Quantity = None
     pol_fraction: np.ndarray = None
     spectral_idx_coefficients: np.ndarray = None
@@ -37,7 +39,9 @@ class PolarizedSource(metaclass=ABCMeta):
             "3C286": "p3c286",
             "3C286_2019": "p3c286_2019",
             "3C147": "p3c147",
-            "3C147_2019": "p3c147_2019"
+            "3C147_2019": "p3c147_2019",
+            "3C295_2019": "p3c295_2019",
+            "3C196_2019": "p3c196_2019"
         }
 
         if self.source is not None:
@@ -52,9 +56,6 @@ class PolarizedSource(metaclass=ABCMeta):
 
         # Pol angle from degrees to radians
         self.pol_angle = self.pol_angle.to(un.rad)
-
-        # Pol fraction in percentage to fraction
-        self.pol_fraction /= 100.0
 
     def p3c48(self):
         self.nu = np.array(
@@ -74,26 +75,13 @@ class PolarizedSource(metaclass=ABCMeta):
                 0.3, 0.5, 0.7, 0.9, 1.4, 2.0, 2.5, 3.2, 3.8, 4.2, 5.2, 5.2, 5.3, 5.4, 6.0, 6.1, 6.4,
                 6.4, 6.9, 7.1, 7.7, 7.8, 7.4, 7.5
             ]
-        )
+        ) / 100.
+
+        self.flux = np.zeros_like(self.pol_fraction) * un.Jy
 
     def p3c48_2019(self):
-        self.nu = np.array(
-            np.array(
-                [
-                    1.02, 1.47, 1.87, 2.57, 3.57, 4.89, 6.68, 8.43, 11.3, 14.1, 16.6, 19.1, 25.6,
-                    32.1, 37.1, 42.1, 48.1
-                ]
-            )
-        ) * un.GHz
-        self.pol_angle = np.array(
-            [
-                4.3, -34.0, 23.0, 67.1, -84.0, -72.0, -66.0, -63.0, -62.0, -63.0, -64.0, -68.0,
-                -72.0, -76.0, -77.0, -84.0, -84.0
-            ]
-        ) * un.deg
-        self.pol_fraction = np.array(
-            [0.3, 0.5, 0.9, 1.6, 2.9, 4.3, 5.4, 5.4, 5.7, 6.1, 6.3, 6.5, 7.2, 6.4, 6.7, 5.6, 6.8]
-        )
+        self.__read_source_from_txt()
+        self.source = "3C48"
 
     def p3c138(self):
         self.nu = np.array(
@@ -113,29 +101,12 @@ class PolarizedSource(metaclass=ABCMeta):
                 5.6, 7.5, 8.4, 9.0, 10.4, 10.7, 10.0, 0.0, 10.0, 10.4, 9.8, 10.0, 10.4, 10.1, 8.4,
                 7.9, 7.7, 7.4, 6.7, 6.5, 6.7, 6.6, 6.6, 6.5
             ]
-        )
+        ) / 100.
+        self.flux = np.zeros_like(self.pol_fraction) * un.Jy
 
     def p3c138_2019(self):
-        self.nu = np.array(
-            np.array(
-                [
-                    1.02, 1.47, 1.87, 2.57, 3.57, 4.89, 6.68, 8.43, 11.3, 14.1, 16.6, 19.1, 25.6,
-                    32.1, 37.1, 42.1, 48.1
-                ]
-            )
-        ) * un.GHz
-        self.pol_angle = np.array(
-            [
-                -13, -9.6, -9.3, -10., -9.5, -10.5, -11.5, -9.4, -7.9, -11, -13, -16, -18, -19, -20,
-                -23, -24
-            ]
-        ) * un.deg
-        self.pol_fraction = np.array(
-            [
-                5.5, 7.8, 9.0, 9.9, 10.3, 10.5, 10.2, 10.9, 9.1, 8.2, 8.2, 8.4, 8.4, 8.5, 8.7, 8.8,
-                9.2
-            ]
-        )
+        self.__read_source_from_txt()
+        self.source = "3C138"
 
     def p3c286(self):
         self.nu = np.array(
@@ -155,29 +126,12 @@ class PolarizedSource(metaclass=ABCMeta):
                 8.6, 9.5, 9.9, 10.1, 10.5, 10.8, 10.9, 11.1, 11.3, 11.4, 11.6, 11.7, 11.9, 11.9,
                 11.9, 11.9, 12.1, 12.2, 12.5, 12.5, 12.6, 12.6, 13.1, 13.2
             ]
-        )
+        ) / 100.
+        self.flux = np.zeros_like(self.pol_fraction) * un.Jy
 
     def p3c286_2019(self):
-        self.nu = np.array(
-            np.array(
-                [
-                    1.02, 1.47, 1.87, 2.57, 3.57, 4.89, 6.68, 8.43, 11.3, 14.1, 16.6, 19.1, 25.6,
-                    32.1, 37.1, 42.1, 48.1
-                ]
-            )
-        ) * un.GHz
-        self.pol_angle = np.array(
-            [
-                33.0, 33.0, 33.0, 33.0, 33.0, 33.0, 33.0, 33.0, 34.0, 34.0, 35.0, 35.0, 36.0, 36.0,
-                36.0, 37.0, 36.0
-            ]
-        ) * un.deg
-        self.pol_fraction = np.array(
-            [
-                8.6, 9.8, 10.1, 10.6, 11.2, 11.5, 11.9, 12.1, 12.3, 12.3, 12.5, 12.6, 12.7, 13.1,
-                13.5, 13.4, 14.6
-            ]
-        )
+        self.__read_source_from_txt()
+        self.source = "3C286"
 
     def p3c147(self):
         self.nu = np.array(
@@ -197,30 +151,33 @@ class PolarizedSource(metaclass=ABCMeta):
                 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.1, 0.3, 0.3, 0.6, 0.7, 0.8, 2.2, 2.4, 2.7,
                 2.9, 3.4, 3.5, 3.8, 3.8, 4.4, 5.2
             ]
-        )
+        ) / 100.
+        self.flux = np.zeros_like(self.pol_fraction) * un.Jy
 
     def p3c147_2019(self):
-        self.nu = np.array(
-            [
-                1.02, 1.47, 1.87, 2.57, 3.57, 4.89, 6.68, 8.43, 11.3, 14.1, 16.6, 19.1, 25.6, 32.1,
-                37.1, 42.1, 48.1
-            ]
-        ) * un.GHz
-        self.pol_angle = np.array(
-            [
-                0.0, 0.0, 0.0, 0.0, 0.0, -13.0, -57.0, -19.0, 27.0, 53.0, 60.0, 66.0, 79.0, 83.0,
-                87.0, 87.0, 85.0
-            ]
-        ) * un.deg
-        self.pol_fraction = np.array(
-            [
-                0.0, 0.0, 0.0, 0.0, 0.0, 0.16, 0.51, 0.48, 0.85, 1.8, 2.4, 2.9, 3.4, 4.0, 4.5, 4.9,
-                6.0
-            ]
-        )
+        self.__read_source_from_txt()
+        self.source = "3C147"
+
+    def p3c196_2019(self):
+        self.__read_source_from_txt()
+        self.source = "3C196"
+
+    def p3c295_2019(self):
+        self.__read_source_from_txt()
+        self.source = "3C295"
+
+    def __read_source_from_txt(self):
+        path_txt_files = Path(__file__).parent.parent / "sources_2019"
+        file_name = path_txt_files / (self.source.lower() + ".txt")
+        data = np.loadtxt(str(file_name))
+        self.nu = data[:, 0] * un.GHz
+        self.flux = data[:, 1] * un.Jy
+        self.pol_fraction = data[:, 2]
+        self.pol_angle = data[:, 3] * un.rad
 
     def init_empty(self):
         self.nu = np.array([]) * un.GHz
+        self.flux = np.array([]) * un.Jy
         self.pol_angle = np.array([]) * un.deg
         self.pol_fraction = np.array([])
 
@@ -232,11 +189,8 @@ class PolarizedSource(metaclass=ABCMeta):
 
     # Returns values in an array lower than a certain frequency
     @staticmethod
-    def filter(nu, data, nu_min: float = 0.0, nu_max: float = np.inf):
-        nu_values = nu
-        if isinstance(nu, Quantity):
-            nu_values = nu.value
-        valid_indexes = np.where((nu_values >= nu_min) & (nu_values <= nu_max))
+    def filter(nu, data, nu_min: [float, Quantity] = 0.0, nu_max: [float, Quantity] = np.inf):
+        valid_indexes = np.where((nu >= nu_min) & (nu <= nu_max))
         nu = nu[valid_indexes]
         data = data[valid_indexes]
         return nu, data
@@ -263,18 +217,18 @@ class PolarizedSource(metaclass=ABCMeta):
             nu = nu.to(un.GHz).value
         flux_at_nu = np.zeros_like(nu, dtype=np.float32)
 
-        for i in range(len(coefficients)):
-            flux_at_nu += coefficients[i] * np.log10(nu)**i
+        for i, coefficient in enumerate(coefficients):
+            flux_at_nu += coefficient * np.log10(nu)**i
 
         return 10.0**flux_at_nu
 
-    def flux_scalar(self, nu: Union[float, Quantity]) -> float:
+    def get_flux_scalar(self, nu: Union[float, Quantity]) -> float:
         return self.flux_scalar_giving_coefficients(nu, self.spectral_idx_coefficients)
 
-    def flux(self, nu: Union[np.ndarray, Quantity]) -> np.ndarray:
+    def get_flux(self, nu: Union[np.ndarray, Quantity]) -> np.ndarray:
         return self.flux_giving_coefficients(nu, self.spectral_idx_coefficients)
 
-    def get_coefficients(self, standard="Perley-Butler 2017", epoch="2017"):
+    def get_coefficients_from_table(self, standard="Perley-Butler 2017", epoch="2017"):
         coefficients_table = ctsys.resolve("nrao/VLA/standards/") + self.spix_dict[standard]
         tb.open(coefficients_table)
         _query_table = tb.taql("select * from " + coefficients_table + " where Epoch=" + epoch)
@@ -288,11 +242,22 @@ class PolarizedSource(metaclass=ABCMeta):
         tb.close()
         return coefficients
 
+    def get_coefficients_from_flux(self, nu: Quantity, nu_0: Quantity = None):
+        if nu_0 is None:
+            nu_0 = (np.max(nu) + np.min(nu)) / 2.
+
+        nearest_nu_0_index = np.argmin(np.abs(nu - nu_0))
+        flux_0 = self.flux[nearest_nu_0_index]
+        initial_coefficients = np.random.rand(2)
+        source_func_frac = FluxFunction(flux_0=flux_0, xdata=nu, x_0=nu_0)
+        source_func_frac.fit(nu, self.flux.value, initial_coefficients)
+        return source_func_frac.coefficients, source_func_frac.coefficients_errors
+
     def fit_alpha_and_beta(self, nu: Quantity, nu_0: Quantity = None):
         if nu_0 is None:
-            nu_0 = np.median(nu)
-        flux_0 = self.flux_scalar(nu_0)
-        fluxes = self.flux(nu)
+            nu_0 = (np.max(nu) + np.min(nu)) / 2.
+        flux_0 = self.get_flux_scalar(nu_0)
+        fluxes = self.get_flux(nu)
         upper_bound = self.spectral_idx_coefficients + self.spectral_idx_coefficients_errors
         lower_bound = self.spectral_idx_coefficients - self.spectral_idx_coefficients_errors
         fluxes_upper_bound = self.flux_giving_coefficients(nu, upper_bound)
@@ -307,18 +272,34 @@ class PolarizedSource(metaclass=ABCMeta):
         return source_func_frac.coefficients, source_func_frac.coefficients_errors
 
     # Returns pol fraction coeffs
-    def get_pol_fraction_coefficients(self, n_terms=3, nu_min=0.0, nu_max=np.inf):
+    def get_pol_fraction_coefficients(
+        self,
+        n_terms: int = 3,
+        nu_0: [float, Quantity] = None,
+        nu_min: [float, Quantity] = 0.0,
+        nu_max: [float, Quantity] = np.inf
+    ):
         nu, pol_frac = self.filter(self.nu, self.pol_fraction, nu_min, nu_max)
-        nu_0 = np.median(nu)
+
+        if nu_0 is None:
+            nu_0 = (np.max(nu) + np.min(nu)) / 2.
         initial_pol_fraction_coefficients = np.random.uniform(0.0, 1.0, n_terms)
         source_func_frac = PolFunction(x_0=nu_0, n_terms=n_terms)
         source_func_frac.fit(nu, pol_frac, initial_pol_fraction_coefficients)
         return source_func_frac.coefficients, source_func_frac.coefficients_errors
 
     # Returns pol angle coefficients in radians
-    def get_pol_angle_coefficients(self, n_terms=3, nu_min=0.0, nu_max=np.inf):
+    def get_pol_angle_coefficients(
+        self,
+        n_terms: int = 3,
+        nu_0: [float, Quantity] = None,
+        nu_min: [float, Quantity] = 0.0,
+        nu_max: [float, Quantity] = np.inf
+    ):
         nu, pol_angle = self.filter(self.nu, self.pol_angle, nu_min, nu_max)
-        nu_0 = np.median(nu)
+
+        if nu_0 is None:
+            nu_0 = (np.max(nu) + np.min(nu)) / 2.
         initial_pol_angle_coefficients = np.random.uniform(-np.pi, np.pi, n_terms)
         source_func_angle = PolFunction(x_0=nu_0, n_terms=n_terms)
         source_func_angle.fit(nu, pol_angle, initial_pol_angle_coefficients)
@@ -327,19 +308,27 @@ class PolarizedSource(metaclass=ABCMeta):
     def get_known_source_information(
         self, nu_0: Quantity = 0.0, standard: str = "Perley-Butler 2017", epoch: str = "2017"
     ):
-        self.get_coefficients(standard=standard, epoch=epoch)
+        self.get_coefficients_from_table(standard=standard, epoch=epoch)
         nu_fit = np.linspace(0.3275, 50.0, 40) * un.GHz
         spec_idx, spec_idx_err = self.fit_alpha_and_beta(nu_fit, nu_0=nu_0)
-        intensity = self.flux_scalar(nu_0)
+        intensity = self.get_flux_scalar(nu_0)
         return intensity, spec_idx, spec_idx_err
 
     def get_source_polarization_information(
-        self, n_terms_angle=3, n_terms_frac=3, nu_min=0.0, nu_max=np.inf
+        self,
+        n_terms_angle=3,
+        n_terms_frac=3,
+        nu_0: Quantity = 0.0,
+        nu_min_frac=0.0,
+        nu_max_frac=np.inf,
+        nu_min_angle=0.0,
+        nu_max_angle=np.inf
     ):
         pol_fraction_coefficients, pol_fraction_coefficients_errors = self.get_pol_fraction_coefficients(
-            n_terms=n_terms_frac, nu_min=nu_min, nu_max=nu_max
+            n_terms=n_terms_frac, nu_0=nu_0, nu_min=nu_min_frac, nu_max=nu_max_frac
         )
         pol_angle_coefficients, pol_angle_coefficients_errors = self.get_pol_angle_coefficients(
-            n_terms=n_terms_angle, nu_min=nu_min, nu_max=nu_max
+            n_terms=n_terms_angle, nu_0=nu_0, nu_min=nu_min_angle, nu_max=nu_max_angle
         )
-        return pol_angle_coefficients, pol_angle_coefficients_errors, pol_fraction_coefficients, pol_fraction_coefficients_errors
+        return pol_angle_coefficients, pol_angle_coefficients_errors, pol_fraction_coefficients, \
+            pol_fraction_coefficients_errors

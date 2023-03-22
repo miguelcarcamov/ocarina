@@ -1,1 +1,1 @@
-from .polcalibration import PolarizationCalibration
+from .polcalibration import PolarizationCalibrator
